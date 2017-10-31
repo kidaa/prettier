@@ -1,5 +1,6 @@
 "use strict";
 
+const stripBom = require("strip-bom");
 const comments = require("./src/comments");
 const version = require("./package.json").version;
 const printAstToDoc = require("./src/printer").printAstToDoc;
@@ -8,6 +9,9 @@ const printDocToString = require("./src/doc-printer").printDocToString;
 const normalizeOptions = require("./src/options").normalize;
 const parser = require("./src/parser");
 const printDocToDebug = require("./src/doc-debug").printDocToDebug;
+const config = require("./src/resolve-config");
+const docblock = require("jest-docblock");
+const getStream = require("get-stream");
 
 function guessLineEnding(text) {
   const index = text.indexOf("\n");
@@ -26,6 +30,11 @@ function attachComments(text, ast, opts) {
   ast.tokens = [];
   opts.originalText = text.trimRight();
   return astComments;
+}
+
+function hasPragma(text) {
+  const pragmas = Object.keys(docblock.parse(docblock.extract(text)));
+  return pragmas.indexOf("prettier") !== -1 || pragmas.indexOf("format") !== -1;
 }
 
 function ensureAllCommentsPrinted(astComments) {
@@ -54,6 +63,29 @@ function ensureAllCommentsPrinted(astComments) {
 }
 
 function formatWithCursor(text, opts, addAlignmentSize) {
+  if (opts.requirePragma && !hasPragma(text)) {
+    return { formatted: text };
+  }
+
+  text = stripBom(text);
+
+  if (
+    opts.insertPragma &&
+    !hasPragma(text) &&
+    opts.rangeStart === 0 &&
+    opts.rangeEnd === Infinity
+  ) {
+    const parsedDocblock = docblock.parseWithComments(docblock.extract(text));
+    const pragmas = Object.assign({ format: "" }, parsedDocblock.pragmas);
+    const newDocblock = docblock.print({
+      pragmas,
+      comments: parsedDocblock.comments.replace(/^(\r?\n)+/, "") // remove leading newlines
+    });
+    const strippedText = docblock.strip(text);
+    const separatingNewlines = strippedText.startsWith("\n") ? "\n" : "\n\n";
+    text = newDocblock + separatingNewlines + strippedText;
+  }
+
   addAlignmentSize = addAlignmentSize || 0;
 
   const ast = parser.parse(text, opts);
@@ -172,45 +204,73 @@ function isSourceElement(opts, node) {
   if (node == null) {
     return false;
   }
-  switch (node.type) {
-    case "ObjectExpression": // JSON
-    case "ArrayExpression": // JSON
-    case "StringLiteral": // JSON
-    case "NumericLiteral": // JSON
-    case "BooleanLiteral": // JSON
-    case "NullLiteral": // JSON
-    case "json-identifier": // JSON
-      return opts.parser === "json";
-    case "FunctionDeclaration":
-    case "BlockStatement":
-    case "BreakStatement":
-    case "ContinueStatement":
-    case "DebuggerStatement":
-    case "DoWhileStatement":
-    case "EmptyStatement":
-    case "ExpressionStatement":
-    case "ForInStatement":
-    case "ForStatement":
-    case "IfStatement":
-    case "LabeledStatement":
-    case "ReturnStatement":
-    case "SwitchStatement":
-    case "ThrowStatement":
-    case "TryStatement":
-    case "VariableDeclaration":
-    case "WhileStatement":
-    case "WithStatement":
-    case "ClassDeclaration": // ES 2015
-    case "ImportDeclaration": // Module
-    case "ExportDefaultDeclaration": // Module
-    case "ExportNamedDeclaration": // Module
-    case "ExportAllDeclaration": // Module
-    case "TypeAlias": // Flow
-    case "InterfaceDeclaration": // Flow, Typescript
-    case "TypeAliasDeclaration": // Typescript
-    case "ExportAssignment": // Typescript
-    case "ExportDeclaration": // Typescript
-      return true;
+  // JS and JS like to avoid repetitions
+  const jsSourceElements = [
+    "FunctionDeclaration",
+    "BlockStatement",
+    "BreakStatement",
+    "ContinueStatement",
+    "DebuggerStatement",
+    "DoWhileStatement",
+    "EmptyStatement",
+    "ExpressionStatement",
+    "ForInStatement",
+    "ForStatement",
+    "IfStatement",
+    "LabeledStatement",
+    "ReturnStatement",
+    "SwitchStatement",
+    "ThrowStatement",
+    "TryStatement",
+    "VariableDeclaration",
+    "WhileStatement",
+    "WithStatement",
+    "ClassDeclaration", // ES 2015
+    "ImportDeclaration", // Module
+    "ExportDefaultDeclaration", // Module
+    "ExportNamedDeclaration", // Module
+    "ExportAllDeclaration", // Module
+    "TypeAlias", // Flow
+    "InterfaceDeclaration", // Flow, Typescript
+    "TypeAliasDeclaration", // Typescript
+    "ExportAssignment", // Typescript
+    "ExportDeclaration" // Typescript
+  ];
+  const jsonSourceElements = [
+    "ObjectExpression",
+    "ArrayExpression",
+    "StringLiteral",
+    "NumericLiteral",
+    "BooleanLiteral",
+    "NullLiteral"
+  ];
+  const graphqlSourceElements = [
+    "OperationDefinition",
+    "FragmentDefinition",
+    "VariableDefinition",
+    "TypeExtensionDefinition",
+    "ObjectTypeDefinition",
+    "FieldDefinition",
+    "DirectiveDefinition",
+    "EnumTypeDefinition",
+    "EnumValueDefinition",
+    "InputValueDefinition",
+    "InputObjectTypeDefinition",
+    "SchemaDefinition",
+    "OperationTypeDefinition",
+    "InterfaceTypeDefinition",
+    "UnionTypeDefinition",
+    "ScalarTypeDefinition"
+  ];
+  switch (opts.parser) {
+    case "flow":
+    case "babylon":
+    case "typescript":
+      return jsSourceElements.indexOf(node.type) > -1;
+    case "json":
+      return jsonSourceElements.indexOf(node.type) > -1;
+    case "graphql":
+      return graphqlSourceElements.indexOf(node.kind) > -1;
   }
   return false;
 }
@@ -264,48 +324,52 @@ function calculateRange(text, opts, ast) {
 }
 
 function formatRange(text, opts, ast) {
-  if (0 < opts.rangeStart || opts.rangeEnd < text.length) {
-    const range = calculateRange(text, opts, ast);
-    const rangeStart = range.rangeStart;
-    const rangeEnd = range.rangeEnd;
-    const rangeString = text.slice(rangeStart, rangeEnd);
-
-    // Try to extend the range backwards to the beginning of the line.
-    // This is so we can detect indentation correctly and restore it.
-    // Use `Math.min` since `lastIndexOf` returns 0 when `rangeStart` is 0
-    const rangeStart2 = Math.min(
-      rangeStart,
-      text.lastIndexOf("\n", rangeStart) + 1
-    );
-    const indentString = text.slice(rangeStart2, rangeStart);
-
-    const alignmentSize = util.getAlignmentSize(indentString, opts.tabWidth);
-
-    const rangeFormatted = format(
-      rangeString,
-      Object.assign({}, opts, {
-        rangeStart: 0,
-        rangeEnd: Infinity,
-        printWidth: opts.printWidth - alignmentSize
-      }),
-      alignmentSize
-    );
-
-    // Since the range contracts to avoid trailing whitespace,
-    // we need to remove the newline that was inserted by the `format` call.
-    const rangeTrimmed = rangeFormatted.trimRight();
-
-    return text.slice(0, rangeStart) + rangeTrimmed + text.slice(rangeEnd);
+  if (opts.rangeStart <= 0 && text.length <= opts.rangeEnd) {
+    return;
   }
+
+  const range = calculateRange(text, opts, ast);
+  const rangeStart = range.rangeStart;
+  const rangeEnd = range.rangeEnd;
+  const rangeString = text.slice(rangeStart, rangeEnd);
+
+  // Try to extend the range backwards to the beginning of the line.
+  // This is so we can detect indentation correctly and restore it.
+  // Use `Math.min` since `lastIndexOf` returns 0 when `rangeStart` is 0
+  const rangeStart2 = Math.min(
+    rangeStart,
+    text.lastIndexOf("\n", rangeStart) + 1
+  );
+  const indentString = text.slice(rangeStart2, rangeStart);
+
+  const alignmentSize = util.getAlignmentSize(indentString, opts.tabWidth);
+
+  const rangeFormatted = format(
+    rangeString,
+    Object.assign({}, opts, {
+      rangeStart: 0,
+      rangeEnd: Infinity,
+      printWidth: opts.printWidth - alignmentSize
+    }),
+    alignmentSize
+  );
+
+  // Since the range contracts to avoid trailing whitespace,
+  // we need to remove the newline that was inserted by the `format` call.
+  const rangeTrimmed = rangeFormatted.trimRight();
+
+  return text.slice(0, rangeStart) + rangeTrimmed + text.slice(rangeEnd);
 }
 
 module.exports = {
   formatWithCursor: function(text, opts) {
     return formatWithCursor(text, normalizeOptions(opts));
   },
+
   format: function(text, opts) {
     return format(text, normalizeOptions(opts));
   },
+
   check: function(text, opts) {
     try {
       const formatted = format(text, normalizeOptions(opts));
@@ -314,8 +378,15 @@ module.exports = {
       return false;
     }
   },
-  version: version,
+
+  resolveConfig: config.resolveConfig,
+  clearConfigCache: config.clearCache,
+
+  version,
+
+  /* istanbul ignore next */
   __debug: {
+    getStream,
     parse: function(text, opts) {
       return parser.parse(text, opts);
     },
