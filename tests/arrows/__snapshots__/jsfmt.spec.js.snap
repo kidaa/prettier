@@ -193,7 +193,8 @@ function render() {
             progress: Math.round(
               100 * e.nativeEvent.loaded / e.nativeEvent.total
             )
-          })}
+          })
+        }
       />
     </View>
   );
@@ -208,7 +209,8 @@ function render() {
             progress: Math.round(
               100 * e.nativeEvent.loaded / e.nativeEvent.total
             )
-          })}
+          })
+        }
       />
     </View>
   );
@@ -223,7 +225,8 @@ function render() {
             progress: Math.round(
               100 * e.nativeEvent.loaded / e.nativeEvent.total
             )
-          })}
+          })
+        }
       />
     </View>
   );
@@ -304,10 +307,7 @@ export const bem = block =>
 <FlatList
   renderItem={(
     info // $FlowExpectedError - bad widgetCount type 6, should be Object
-  ) =>
-    <span>
-      {info.item.widget.missingProp}
-    </span>}
+  ) => <span>{info.item.widget.missingProp}</span>}
   data={data}
 />;
 
@@ -380,5 +380,12 @@ const initializeSnapshotState = (
   testPath: string,
   expand: boolean
 ) => new SnapshotState(testFile, update, testPath, expand);
+
+`;
+
+exports[`type_params.js 1`] = `
+<T>(a) => { }
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<T>(a) => {};
 
 `;

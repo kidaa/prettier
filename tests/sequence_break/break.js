@@ -10,4 +10,8 @@ for (aLongIdentifierName = 0, aLongIdentifierName = 0, aLongIdentifierName = 0, 
   (a = b ? c : function() { return 0; }),
   (a = b ? c : function() { return 0; }),
   (a = b ? c : function() { return 0; }),
+<<<<<<< HEAD
   (a = b ? c : function() { return 0; });
+=======
+  (a = b ? c : function() { return 0; });
+>>>>>>> refs/remotes/prettier/master

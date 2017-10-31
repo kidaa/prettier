@@ -15,6 +15,8 @@ const defaults = {
   bracketSpacing: true,
   jsxBracketSameLine: false,
   parser: "babylon",
+  insertPragma: false,
+  requirePragma: false,
   semi: true
 };
 
@@ -29,8 +31,12 @@ function normalize(options) {
   const normalized = Object.assign({}, options || {});
   const filepath = normalized.filepath;
 
-  if (/\.(css|less|scss)$/.test(filepath)) {
-    normalized.parser = "postcss";
+  if (/\.css$/.test(filepath)) {
+    normalized.parser = "css";
+  } else if (/\.less$/.test(filepath)) {
+    normalized.parser = "less";
+  } else if (/\.scss$/.test(filepath)) {
+    normalized.parser = "scss";
   } else if (/\.html$/.test(filepath)) {
     normalized.parser = "parse5";
   } else if (/\.(ts|tsx)$/.test(filepath)) {
@@ -39,12 +45,15 @@ function normalize(options) {
     normalized.parser = "graphql";
   } else if (/\.json$/.test(filepath)) {
     normalized.parser = "json";
+  } else if (/\.(md|markdown)$/.test(filepath)) {
+    normalized.parser = "markdown";
   }
 
   if (normalized.parser === "json") {
     normalized.trailingComma = "none";
   }
 
+  /* istanbul ignore if */
   if (typeof normalized.trailingComma === "boolean") {
     // Support a deprecated boolean type for the trailing comma config
     // for a few versions. This code can be removed later.
@@ -53,6 +62,16 @@ function normalize(options) {
     console.warn(
       "Warning: `trailingComma` without any argument is deprecated. " +
         'Specify "none", "es5", or "all".'
+    );
+  }
+
+  /* istanbul ignore if */
+  if (normalized.parser === "postcss") {
+    normalized.parser = "css";
+
+    console.warn(
+      'Warning: `parser` with value "postcss" is deprecated. ' +
+        'Use "css", "less" or "scss" instead.'
     );
   }
 
@@ -68,6 +87,7 @@ function normalize(options) {
   normalized.parser = parserBackup;
 
   // For backward compatibility. Deprecated in 0.0.10
+  /* istanbul ignore if */
   if ("useFlowParser" in normalized) {
     normalized.parser = normalized.useFlowParser ? "flow" : "babylon";
     delete normalized.useFlowParser;
@@ -82,4 +102,4 @@ function normalize(options) {
   return normalized;
 }
 
-module.exports = { normalize };
+module.exports = { normalize, defaults };

@@ -164,16 +164,13 @@ class Index extends React.Component {
           <div className="productShowcaseSection paddingTop paddingBottom lightBackground">
             <h2>Who{"'"}s Using Prettier?</h2>
             <p>
-              A few of the
-              {" "}
+              A few of the{" "}
               <a href="https://www.npmjs.com/browse/depended/prettier">
                 many projects
-              </a>
-              {" "}using Prettier
+              </a>{" "}
+              using Prettier
             </p>
-            <div className="logos">
-              {showcase}
-            </div>
+            <div className="logos">{showcase}</div>
             <div className="more-users">
               <a
                 className="button"

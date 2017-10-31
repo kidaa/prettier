@@ -20,7 +20,7 @@
   {
     "caption": "Babel",
     "image": "/images/babel-200x100.png",
-    "infoLink": "https://babeljs.jo",
+    "infoLink": "https://babeljs.io",
     "pinned": true
   },
   {
@@ -34,5 +34,25 @@
     "image": "/images/webpack-200x100.png",
     "infoLink": "https://webpack.js.org/api/cli/",
     "pinned": true
+  },
+  {
+    "caption": "PayPal",
+    "image": "/images/paypal-200x100.png",
+    "infoLink": "https://github.com/paypal"
+  },
+  {
+    "caption": "Hudl",
+    "image": "/images/hudl-200x100.png",
+    "infoLink": "http://hudl.github.io/"
+  },
+  {
+    "caption": "Transloadit",
+    "image": "/images/transloadit-200x100.png",
+    "infoLink": "https://transloadit.com/"
+  },
+  {
+    "caption": "Tradeshift",
+    "image": "/images/tradeshift-200x100.png",
+    "infoLink": "https://tradeshift.com/"
   }
 ]

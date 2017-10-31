@@ -2,7 +2,7 @@
 
 const React = require("react");
 
-const GithubButton = props =>
+const GithubButton = props => (
   <a
     className="github-button"
     href={props.config.githubUrl}
@@ -13,7 +13,8 @@ const GithubButton = props =>
     aria-label="Star this project on GitHub"
   >
     Star
-  </a>;
+  </a>
+);
 
 GithubButton.propTypes = {
   config: React.PropTypes.object
@@ -37,22 +38,16 @@ class Footer extends React.Component {
           </a>
           <div>
             <h5>Docs</h5>
-            <a href={this.url("/why-prettier.html")}>
-              Why Prettier?
-            </a>
-            <a href={this.url("/usage.html")}>
-              Usage
-            </a>
-            <a href={this.url("/options.html")}>
-              Options
-            </a>
-            <a href={this.url("/editors.html")}>
-              Editor Integeration
-            </a>
+            <a href={this.url("/why-prettier.html")}>Why Prettier?</a>
+            <a href={this.url("/usage.html")}>Usage</a>
+            <a href={this.url("/options.html")}>Options</a>
+            <a href={this.url("/editors.html")}>Editor Integeration</a>
           </div>
           <div>
             <h5>Community</h5>
-            <a href={this.url("/users/")}>
+            <a
+              href={this.props.config.baseUrl + this.props.language + "/users/"}
+            >
               User Showcase
             </a>
             <a

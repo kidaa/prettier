@@ -13,16 +13,35 @@ for (aLongIdentifierName = 0, aLongIdentifierName = 0, aLongIdentifierName = 0, 
   (a = b ? c : function() { return 0; }),
   (a = b ? c : function() { return 0; }),
   (a = b ? c : function() { return 0; }),
+<<<<<<< HEAD
   (a = b ? c : function() { return 0; });~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=======
+  (a = b ? c : function() { return 0; });
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+>>>>>>> refs/remotes/prettier/master
 const f = (argument1, argument2, argument3) => (
   doSomethingWithArgument(argument1),
   doSomethingWithArgument(argument2),
   argument1
 );
 (function() {
+<<<<<<< HEAD
   return aLongIdentifierName, aLongIdentifierName, aLongIdentifierName, aLongIdentifierName;
 });
 aLongIdentifierName, aLongIdentifierName, aLongIdentifierName, aLongIdentifierName;
+=======
+  return (
+    aLongIdentifierName,
+    aLongIdentifierName,
+    aLongIdentifierName,
+    aLongIdentifierName
+  );
+});
+aLongIdentifierName,
+  aLongIdentifierName,
+  aLongIdentifierName,
+  aLongIdentifierName;
+>>>>>>> refs/remotes/prettier/master
 a.then(
   () => (
     aLongIdentifierName,
@@ -32,7 +51,14 @@ a.then(
   )
 );
 for (
+<<<<<<< HEAD
   aLongIdentifierName = 0, aLongIdentifierName = 0, aLongIdentifierName = 0, aLongIdentifierName = 0;
+=======
+  aLongIdentifierName = 0,
+    aLongIdentifierName = 0,
+    aLongIdentifierName = 0,
+    aLongIdentifierName = 0;
+>>>>>>> refs/remotes/prettier/master
   test;
   update
 ) {}
@@ -40,6 +66,7 @@ for (
   ? c
   : function() {
       return 0;
+<<<<<<< HEAD
     }), (a = b
   ? c
   : function() {
@@ -57,5 +84,28 @@ for (
   : function() {
       return 0;
     });
+=======
+    }),
+  (a = b
+    ? c
+    : function() {
+        return 0;
+      }),
+  (a = b
+    ? c
+    : function() {
+        return 0;
+      }),
+  (a = b
+    ? c
+    : function() {
+        return 0;
+      }),
+  (a = b
+    ? c
+    : function() {
+        return 0;
+      });
+>>>>>>> refs/remotes/prettier/master
 
 `;
