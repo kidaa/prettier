@@ -1,11 +1,9 @@
 "use strict";
 
-const utils = require("./doc-utils");
-const willBreak = utils.willBreak;
-
 function assertDoc(val) {
+  /* istanbul ignore if */
   if (
-    !(typeof val === "string" || val != null && typeof val.type === "string")
+    !(typeof val === "string" || (val != null && typeof val.type === "string"))
   ) {
     throw new Error(
       "Value " + JSON.stringify(val) + " is not a valid document"
@@ -25,10 +23,16 @@ function concat(parts) {
   return { type: "concat", parts };
 }
 
-function indent(n, contents) {
+function indent(contents) {
   assertDoc(contents);
 
-  return { type: "indent", contents, n };
+  return { type: "indent", contents };
+}
+
+function align(n, contents) {
+  assertDoc(contents);
+
+  return { type: "align", contents, n };
 }
 
 function group(contents, opts) {
@@ -51,6 +55,12 @@ function conditionalGroup(states, opts) {
   );
 }
 
+function fill(parts) {
+  parts.forEach(assertDoc);
+
+  return { type: "fill", parts };
+}
+
 function ifBreak(breakContents, flatContents) {
   if (breakContents) {
     assertDoc(breakContents);
@@ -67,6 +77,7 @@ function lineSuffix(contents) {
   return { type: "line-suffix", contents };
 }
 
+const lineSuffixBoundary = { type: "line-suffix-boundary" };
 const breakParent = { type: "break-parent" };
 const line = { type: "line" };
 const softline = { type: "line", soft: true };
@@ -75,11 +86,12 @@ const literalline = concat([
   { type: "line", hard: true, literal: true },
   breakParent
 ]);
+const cursor = { type: "cursor", placeholder: Symbol("cursor") };
 
 function join(sep, arr) {
-  var res = [];
+  const res = [];
 
-  for (var i = 0; i < arr.length; i++) {
+  for (let i = 0; i < arr.length; i++) {
     if (i !== 0) {
       res.push(sep);
     }
@@ -88,6 +100,22 @@ function join(sep, arr) {
   }
 
   return concat(res);
+}
+
+function addAlignmentToDoc(doc, size, tabWidth) {
+  let aligned = doc;
+  if (size > 0) {
+    // Use indent to add tabs for all the levels of tabs we need
+    for (let i = 0; i < Math.floor(size / tabWidth); ++i) {
+      aligned = indent(aligned);
+    }
+    // Use align for all the spaces that are needed
+    aligned = align(size % tabWidth, aligned);
+    // size is absolute from 0 and not relative to the current
+    // indentation, so we use -Infinity to reset the indentation to 0
+    aligned = align(-Infinity, aligned);
+  }
+  return aligned;
 }
 
 module.exports = {
@@ -99,8 +127,13 @@ module.exports = {
   literalline,
   group,
   conditionalGroup,
+  fill,
   lineSuffix,
+  lineSuffixBoundary,
+  cursor,
   breakParent,
   ifBreak,
-  indent
+  indent,
+  align,
+  addAlignmentToDoc
 };

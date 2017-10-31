@@ -1,14 +1,14 @@
-exports[`test symbol.js 1`] = `
-"var FOO = Symbol();
-var BAR = Symbol(\'bar\');
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-// TODO: Expected error
-var WAT = Symbol(\'foo\', \'bar\');
+exports[`symbol.js 1`] = `
+var FOO = Symbol();
+var BAR = Symbol('bar');
+
+var WAT = Symbol('foo', 'bar'); // Error - unused argument
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 var FOO = Symbol();
-var BAR = Symbol(\"bar\");
+var BAR = Symbol("bar");
 
-// TODO: Expected error
-var WAT = Symbol(\"foo\", \"bar\");
-"
+var WAT = Symbol("foo", "bar"); // Error - unused argument
+
 `;

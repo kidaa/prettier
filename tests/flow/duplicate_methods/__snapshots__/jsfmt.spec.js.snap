@@ -1,5 +1,7 @@
-exports[`test test.js 1`] = `
-"class C1 {
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`test.js 1`] = `
+class C1 {
   m() { }
   m() { }
 }
@@ -76,5 +78,5 @@ class C5 {
 }
 
 new C5().m = new C5().m - 42;
-"
+
 `;

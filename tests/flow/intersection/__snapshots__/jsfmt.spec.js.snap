@@ -1,5 +1,7 @@
-exports[`test intersection.js 1`] = `
-"function foo(x: $All<Error,{type:number}>): number {
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`intersection.js 1`] = `
+function foo(x: $All<Error,{type:number}>): number {
     return x.type;
 }
 
@@ -14,11 +16,11 @@ function foo(x: $All<Error, { type: number }>): number {
 function bar(x: Error & { type: number }): number {
   return x.type;
 }
-"
+
 `;
 
-exports[`test objassign.js 1`] = `
-"/**
+exports[`objassign.js 1`] = `
+/**
  * Test intersection of objects flowing to spread assignment.
  *
  * Definitions in lib/lib.js
@@ -41,11 +43,11 @@ let y: ObjAssignT = { ...x }; // should be fine
 declare var x: ObjAssignT;
 
 let y: ObjAssignT = { ...x }; // should be fine
-"
+
 `;
 
-exports[`test pred.js 1`] = `
-"/**
+exports[`pred.js 1`] = `
+/**
  * Test interaction of object intersections and predicates.
  * Definitions in lib/lib.js
  *
@@ -77,31 +79,33 @@ function hasObjectMode_ok(options: DuplexStreamOptions): boolean {
  * @flow
  */
 
-type DuplexStreamOptions =
-  & ReadableStreamOptions
-  & WritableStreamOptions
-  & {
+type DuplexStreamOptions = ReadableStreamOptions &
+  WritableStreamOptions & {
     allowHalfOpen?: boolean,
     readableObjectMode?: boolean,
     writableObjectMode?: boolean
   };
 
 function hasObjectMode_bad(options: DuplexStreamOptions): boolean {
-  return options.objectMode ||
+  return (
+    options.objectMode ||
     options.readableObjectMode ||
-    options.writableObjectMode; // error, undefined ~> boolean
+    options.writableObjectMode
+  ); // error, undefined ~> boolean
 }
 
 function hasObjectMode_ok(options: DuplexStreamOptions): boolean {
-  return !!(options.objectMode ||
+  return !!(
+    options.objectMode ||
     options.readableObjectMode ||
-    options.writableObjectMode);
+    options.writableObjectMode
+  );
 }
-"
+
 `;
 
-exports[`test test_fun.js 1`] = `
-"/**
+exports[`test_fun.js 1`] = `
+/**
  * Tests for intersections of function types.
  *
  * Note: Flow abuses intersection types to model
@@ -164,11 +168,11 @@ var fun2: FG = fun1;
 // simpler variation
 declare var f: ((_: number) => void) & ((_: string) => void);
 var g: (_: number | string) => void = f;
-"
+
 `;
 
-exports[`test test_obj.js 1`] = `
-"/**
+exports[`test_obj.js 1`] = `
+/**
  * Tests for intersections of object types
  *
  * @noflow
@@ -227,5 +231,5 @@ var d: D = c; // ok
 // dict type mismatch
 type E = { [key: string]: string };
 var e: E = c; // error
-"
+
 `;

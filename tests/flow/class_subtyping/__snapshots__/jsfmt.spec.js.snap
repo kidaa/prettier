@@ -1,5 +1,7 @@
-exports[`test test.js 1`] = `
-"/* @flow */
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`test.js 1`] = `
+/* @flow */
 class A {}
 class B {}
 
@@ -10,12 +12,12 @@ class A {}
 class B {}
 
 module.exports = { A, B };
-"
+
 `;
 
-exports[`test test2.js 1`] = `
-"/* @flow */
-var I = require(\"./test.js\");
+exports[`test2.js 1`] = `
+/* @flow */
+var I = require("./test.js");
 
 class C extends I.A {}
 
@@ -23,17 +25,17 @@ var x: I.A = new C();
 var y: I.B = new C();
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 /* @flow */
-var I = require(\"./test.js\");
+var I = require("./test.js");
 
 class C extends I.A {}
 
 var x: I.A = new C();
 var y: I.B = new C();
-"
+
 `;
 
-exports[`test test3.js 1`] = `
-"class A<X, Y, Z> {}
+exports[`test3.js 1`] = `
+class A<X, Y, Z> {}
 class B extends A<string, number, bool> {}
 class C<X, Y, Z> extends B {}
 
@@ -46,11 +48,11 @@ class C<X, Y, Z> extends B {}
 
 var c: C<number, string, Array<boolean>> = new C(); // none of the type args matter
 var a: A<string, number, Array<boolean>> = c; // the third type arg is incorrect
-"
+
 `;
 
-exports[`test test4.js 1`] = `
-"class C<X> { x: X; }
+exports[`test4.js 1`] = `
+class C<X> { x: X; }
 
 function foo<X>(c: C<X>, x: X) { }
 
@@ -81,5 +83,5 @@ class D extends C<O> {
 }
 
 foo(new D(), { f_: 0 });
-"
+
 `;

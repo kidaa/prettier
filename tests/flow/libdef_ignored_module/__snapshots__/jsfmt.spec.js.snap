@@ -1,14 +1,16 @@
-exports[`test test.js 1`] = `
-"/* @flow */
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-import foo from \"foo\";
+exports[`test.js 1`] = `
+/* @flow */
+
+import foo from "foo";
 
 (foo.bar : string); // error number ~> string
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 /* @flow */
 
-import foo from \"foo\";
+import foo from "foo";
 
 (foo.bar: string); // error number ~> string
-"
+
 `;

@@ -1,5 +1,7 @@
-exports[`test forof.js 1`] = `
-"/**
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`forof.js 1`] = `
+/**
  * @flow
  */
 
@@ -106,5 +108,5 @@ function testSet2(set: Set<*>): void {
     (x: number); // Anything goes
   }
 }
-"
+
 `;

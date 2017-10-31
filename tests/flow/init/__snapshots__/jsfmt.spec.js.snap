@@ -1,5 +1,7 @@
-exports[`test hoisted.js 1`] = `
-"/**
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`hoisted.js 1`] = `
+/**
  * test initialization tracking in the presence of hoisting
  * @flow
  */
@@ -92,11 +94,11 @@ function _for_of(arr: Array<number>) {
   }
   f(); // error, possibly undefined
 }
-"
+
 `;
 
-exports[`test hoisted2.js 1`] = `
-"/**
+exports[`hoisted2.js 1`] = `
+/**
  * test initialization tracking for vars
  * note: for try/catch/finally, see tests/try/init.js
  * @flow
@@ -633,11 +635,11 @@ function for_in_post_init() {
   }
   var y: number = x; // error
 }
-"
+
 `;
 
-exports[`test let.js 1`] = `
-"/**
+exports[`let.js 1`] = `
+/**
  * test initialization tracking for lets
  * @flow
  */
@@ -660,7 +662,7 @@ function linear_pre_init() {
 
 // self-references in let bindings are not ok
 function self_init() {
-  let x = x;  // \'x\' not initialized!
+  let x = x;  // 'x' not initialized!
 }
 
 // use of let after partial init (non-exhaustive if) gives undefined
@@ -767,7 +769,7 @@ function switch_post_init2(i): number {
       bar = 3;
       break;
     default:
-      throw new Error(\'Invalid state\');
+      throw new Error('Invalid state');
   }
   return bar; // ok, definitely initialized
 }
@@ -780,7 +782,7 @@ function switch_post_init2(i): number {
       bar = 3;
       break;
     default:
-      throw new Error(\'Invalid state\');
+      throw new Error('Invalid state');
   }
   return bar; // ok, definitely initialized
 }
@@ -818,7 +820,7 @@ function linear_pre_init() {
 
 // self-references in let bindings are not ok
 function self_init() {
-  let x = x; // \'x\' not initialized!
+  let x = x; // 'x' not initialized!
 }
 
 // use of let after partial init (non-exhaustive if) gives undefined
@@ -925,7 +927,7 @@ function switch_post_init2(i): number {
       bar = 3;
       break;
     default:
-      throw new Error(\"Invalid state\");
+      throw new Error("Invalid state");
   }
   return bar; // ok, definitely initialized
 }
@@ -938,7 +940,7 @@ function switch_post_init2(i): number {
       bar = 3;
       break;
     default:
-      throw new Error(\"Invalid state\");
+      throw new Error("Invalid state");
   }
   return bar; // ok, definitely initialized
 }
@@ -956,14 +958,14 @@ function sub_closure_init_reference() {
   // TDZ (...even though this is weird...)
   var z = z;
 }
-"
+
 `;
 
-exports[`test nullable-init.js 1`] = `
-"var o: {x: ?number} = { x: null };
+exports[`nullable-init.js 1`] = `
+var o: {x: ?number} = { x: null };
 var a: Array<?number> = [null,null];
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 var o: { x: ?number } = { x: null };
 var a: Array<?number> = [null, null];
-"
+
 `;

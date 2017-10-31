@@ -1,6 +1,8 @@
-exports[`test foo.js 1`] = `
-"a\`foo \${bar} baz\`
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`foo.js 1`] = `
+a\`foo \${bar} baz\`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 a\`foo \${bar} baz\`;
-"
+
 `;

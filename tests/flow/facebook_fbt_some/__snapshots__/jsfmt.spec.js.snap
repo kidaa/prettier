@@ -1,5 +1,7 @@
-exports[`test main.js 1`] = `
-"// @flow
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`main.js 1`] = `
+// @flow
 
 (<fbt />: number);
 (<fbt />: string); // Error (the libdef in this test marks fbt as number)
@@ -8,5 +10,5 @@ exports[`test main.js 1`] = `
 
 (<fbt />: number);
 (<fbt />: string); // Error (the libdef in this test marks fbt as number)
-"
+
 `;

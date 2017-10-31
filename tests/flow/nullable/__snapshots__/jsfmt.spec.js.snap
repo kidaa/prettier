@@ -1,20 +1,22 @@
-exports[`test maybe.js 1`] = `
-"// @flow
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`maybe.js 1`] = `
+// @flow
 
 // unwrapping nested maybes should work
-((\'foo\': ?(?string)): ?string); // ok
+(('foo': ?(?string)): ?string); // ok
 ((123: ?(?number)): ?string); // error (only num ~> string)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // @flow
 
 // unwrapping nested maybes should work
-((\"foo\": ??string): ?string); // ok
+(("foo": ??string): ?string); // ok
 ((123: ??number): ?string); // error (only num ~> string)
-"
+
 `;
 
-exports[`test nullable.js 1`] = `
-"function foo():string { return null; }
+exports[`nullable.js 1`] = `
+function foo():string { return null; }
 
 function bar():?string { return null; }
 
@@ -58,24 +60,24 @@ if (x != null) {
 }
 
 var array_of_nullable: Array<?number> = [null, 3];
-"
+
 `;
 
-exports[`test simple_nullable.js 1`] = `
-"function foo(x:?string) {}
+exports[`simple_nullable.js 1`] = `
+function foo(x:?string) {}
 function bar(x:?number) {}
-foo(\'hmm\');
-bar(\'hmm\');
+foo('hmm');
+bar('hmm');
 
 function fn(data: ?{}) {}
-fn({some: \'literal\'});
+fn({some: 'literal'});
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function foo(x: ?string) {}
 function bar(x: ?number) {}
-foo(\"hmm\");
-bar(\"hmm\");
+foo("hmm");
+bar("hmm");
 
 function fn(data: ?{}) {}
-fn({ some: \"literal\" });
-"
+fn({ some: "literal" });
+
 `;

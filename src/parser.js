@@ -1,57 +1,80 @@
 "use strict";
 
-function parseWithFlow(text) {
-  // Inline the require to avoid loading all the JS if we don't use it
-  const flowParser = require("flow-parser");
+const path = require("path");
+const ConfigError = require("./errors").ConfigError;
 
-  const ast = flowParser.parse(text, {
-    esproposal_class_instance_fields: true,
-    esproposal_class_static_fields: true,
-    esproposal_export_star_as: true
-  });
-
-  if (ast.errors.length > 0) {
-    // Construct an error similar to the ones thrown by Babylon.
-    const loc = {
-      line: ast.errors[0].loc.start.line,
-      column: ast.errors[0].loc.start.column
-    };
-    const msg = ast.errors[0].message +
-      " (" +
-      loc.line +
-      ":" +
-      loc.column +
-      ")";
-    const error = new SyntaxError(msg);
-    error.loc = loc;
-    throw error;
+const parsers = {
+  get flow() {
+    return eval("require")("./parser-flow");
+  },
+  get graphql() {
+    return eval("require")("./parser-graphql");
+  },
+  get parse5() {
+    return eval("require")("./parser-parse5");
+  },
+  get babylon() {
+    return eval("require")("./parser-babylon");
+  },
+  get typescript() {
+    return eval("require")("./parser-typescript");
+  },
+  get css() {
+    return eval("require")("./parser-postcss");
+  },
+  get less() {
+    return eval("require")("./parser-postcss");
+  },
+  get scss() {
+    return eval("require")("./parser-postcss");
+  },
+  get json() {
+    return eval("require")("./parser-babylon");
+  },
+  get markdown() {
+    return eval("require")("./parser-markdown");
   }
+};
 
-  return ast;
+function resolveParseFunction(opts) {
+  if (typeof opts.parser === "function") {
+    return opts.parser;
+  }
+  if (typeof opts.parser === "string") {
+    if (parsers.hasOwnProperty(opts.parser)) {
+      return parsers[opts.parser];
+    }
+    try {
+      return eval("require")(path.resolve(process.cwd(), opts.parser));
+    } catch (err) {
+      /* istanbul ignore next */
+      throw new ConfigError(`Couldn't resolve parser "${opts.parser}"`);
+    }
+  }
+  /* istanbul ignore next */
+  return parsers.babylon;
 }
 
-function parseWithBabylon(text) {
-  // Inline the require to avoid loading all the JS if we don't use it
-  const babylon = require("babylon");
+function parse(text, opts) {
+  const parseFunction = resolveParseFunction(opts);
 
-  return babylon.parse(text, {
-    sourceType: "module",
-    allowImportExportEverywhere: false,
-    allowReturnOutsideFunction: false,
-    plugins: [
-      "jsx",
-      "flow",
-      "doExpressions",
-      "objectRestSpread",
-      "decorators",
-      "classProperties",
-      "exportExtensions",
-      "asyncGenerators",
-      "functionBind",
-      "functionSent",
-      "dynamicImport"
-    ]
-  });
+  try {
+    return parseFunction(text, parsers, opts);
+  } catch (error) {
+    const loc = error.loc;
+
+    if (loc) {
+      const codeFrame = require("babel-code-frame");
+      error.codeFrame = codeFrame.codeFrameColumns(text, loc, {
+        highlightCode: true
+      });
+      error.message += "\n" + error.codeFrame;
+      throw error;
+    }
+
+    /* istanbul ignore next */
+    throw error.stack;
+  }
 }
 
-module.exports = { parseWithFlow, parseWithBabylon };
+module.exports = { parse };

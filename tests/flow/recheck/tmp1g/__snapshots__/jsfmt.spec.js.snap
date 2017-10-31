@@ -1,5 +1,7 @@
-exports[`test g1.js 1`] = `
-"// @flow
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`g1.js 1`] = `
+// @flow
 
 export class C { }
 export var extra = null;
@@ -8,5 +10,5 @@ export var extra = null;
 
 export class C {}
 export var extra = null;
-"
+
 `;

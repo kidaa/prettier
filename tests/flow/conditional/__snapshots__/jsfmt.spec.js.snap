@@ -1,5 +1,7 @@
-exports[`test conditional.js 1`] = `
-"/* @flow */
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`conditional.js 1`] = `
+/* @flow */
 
 function a(): number {
   var x: ?string = null;
@@ -49,5 +51,5 @@ function d(): string {
   var x: ?number = null;
   return x != null ? x : x != null;
 }
-"
+
 `;

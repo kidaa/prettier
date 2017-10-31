@@ -1,72 +1,42 @@
-var assert = require("assert");
-var types = require("ast-types");
-var util = require("./util");
-var n = types.namedTypes;
-var Node = n.Node;
-var isArray = types.builtInTypes.array;
-var isNumber = types.builtInTypes.number;
+"use strict";
+
+const assert = require("assert");
+const util = require("./util");
+const startsWithNoLookaheadToken = util.startsWithNoLookaheadToken;
 
 function FastPath(value) {
   assert.ok(this instanceof FastPath);
   this.stack = [value];
 }
 
-var FPp = FastPath.prototype;
-
-// Static convenience function for coercing a value to a FastPath.
-FastPath.from = function(obj) {
-  if (obj instanceof FastPath) {
-    // Return a defensive copy of any existing FastPath instances.
-    return obj.copy();
-  }
-
-  if (obj instanceof types.NodePath) {
-    // For backwards compatibility, unroll NodePath instances into
-    // lightweight FastPath [..., name, value] stacks.
-    var copy = Object.create(FastPath.prototype);
-    var stack = [obj.value];
-    for (var pp; pp = obj.parentPath; obj = pp)
-      stack.push(obj.name, pp.value);
-    copy.stack = stack.reverse();
-    return copy;
-  }
-
-  // Otherwise use obj as the value of the new FastPath instance.
-  return new FastPath(obj);
-};
-
-FPp.copy = function copy() {
-  var copy = Object.create(FastPath.prototype);
-  copy.stack = this.stack.slice(0);
-  return copy;
-};
-
 // The name of the current property is always the penultimate element of
 // this.stack, and always a String.
-FPp.getName = function getName() {
-  var s = this.stack;
-  var len = s.length;
+FastPath.prototype.getName = function getName() {
+  const s = this.stack;
+  const len = s.length;
   if (len > 1) {
     return s[len - 2];
   }
   // Since the name is always a string, null is a safe sentinel value to
   // return if we do not know the name of the (root) value.
+  /* istanbul ignore next */
   return null;
 };
 
 // The value of the current property is always the final element of
 // this.stack.
-FPp.getValue = function getValue() {
-  var s = this.stack;
+FastPath.prototype.getValue = function getValue() {
+  const s = this.stack;
   return s[s.length - 1];
 };
 
 function getNodeHelper(path, count) {
-  var s = path.stack;
+  const s = path.stack;
 
-  for (var i = s.length - 1; i >= 0; i -= 2) {
-    var value = s[i];
-    if (n.Node.check(value) && --count < 0) {
+  for (let i = s.length - 1; i >= 0; i -= 2) {
+    const value = s[i];
+
+    if (value && !Array.isArray(value) && --count < 0) {
       return value;
     }
   }
@@ -74,28 +44,12 @@ function getNodeHelper(path, count) {
   return null;
 }
 
-FPp.getNode = function getNode(count) {
+FastPath.prototype.getNode = function getNode(count) {
   return getNodeHelper(this, ~~count);
 };
 
-FPp.getParentNode = function getParentNode(count) {
+FastPath.prototype.getParentNode = function getParentNode(count) {
   return getNodeHelper(this, ~~count + 1);
-};
-
-FPp.isLast = function isLast() {
-  var s = this.stack;
-  if (this.getParentNode()) {
-    var idx = s[s.length - 2];
-    // The name of this node should be an index
-    assert.ok(typeof idx === "number");
-
-    const arr = s[s.length - 3];
-    // We should have an array as a parent node
-    assert.ok(Array.isArray(arr));
-
-    return idx === arr.length - 1;
-  }
-  return false;
 };
 
 // Temporarily push properties named by string arguments given after the
@@ -103,17 +57,17 @@ FPp.isLast = function isLast() {
 // reference to this (modified) FastPath object. Note that the stack will
 // be restored to its original state after the callback is finished, so it
 // is probably a mistake to retain a reference to the path.
-FPp.call = function call(callback /*, name1, name2, ... */) {
-  var s = this.stack;
-  var origLen = s.length;
-  var value = s[origLen - 1];
-  var argc = arguments.length;
-  for (var i = 1; i < argc; ++i) {
-    var name = arguments[i];
+FastPath.prototype.call = function call(callback /*, name1, name2, ... */) {
+  const s = this.stack;
+  const origLen = s.length;
+  let value = s[origLen - 1];
+  const argc = arguments.length;
+  for (let i = 1; i < argc; ++i) {
+    const name = arguments[i];
     value = value[name];
     s.push(name, value);
   }
-  var result = callback(this);
+  const result = callback(this);
   s.length = origLen;
   return result;
 };
@@ -122,19 +76,19 @@ FPp.call = function call(callback /*, name1, name2, ... */) {
 // accessing this.getValue()[name1][name2]... should be array-like. The
 // callback will be called with a reference to this path object for each
 // element of the array.
-FPp.each = function each(callback /*, name1, name2, ... */) {
-  var s = this.stack;
-  var origLen = s.length;
-  var value = s[origLen - 1];
-  var argc = arguments.length;
+FastPath.prototype.each = function each(callback /*, name1, name2, ... */) {
+  const s = this.stack;
+  const origLen = s.length;
+  let value = s[origLen - 1];
+  const argc = arguments.length;
 
-  for (var i = 1; i < argc; ++i) {
-    var name = arguments[i];
+  for (let i = 1; i < argc; ++i) {
+    const name = arguments[i];
     value = value[name];
     s.push(name, value);
   }
 
-  for (var i = 0; i < value.length; ++i) {
+  for (let i = 0; i < value.length; ++i) {
     if (i in value) {
       s.push(i, value[i]);
       // If the callback needs to know the value of i, call
@@ -150,21 +104,21 @@ FPp.each = function each(callback /*, name1, name2, ... */) {
 // Similar to FastPath.prototype.each, except that the results of the
 // callback function invocations are stored in an array and returned at
 // the end of the iteration.
-FPp.map = function map(callback /*, name1, name2, ... */) {
-  var s = this.stack;
-  var origLen = s.length;
-  var value = s[origLen - 1];
-  var argc = arguments.length;
+FastPath.prototype.map = function map(callback /*, name1, name2, ... */) {
+  const s = this.stack;
+  const origLen = s.length;
+  let value = s[origLen - 1];
+  const argc = arguments.length;
 
-  for (var i = 1; i < argc; ++i) {
-    var name = arguments[i];
+  for (let i = 1; i < argc; ++i) {
+    const name = arguments[i];
     value = value[name];
     s.push(name, value);
   }
 
-  var result = new Array(value.length);
+  const result = new Array(value.length);
 
-  for (var i = 0; i < value.length; ++i) {
+  for (let i = 0; i < value.length; ++i) {
     if (i in value) {
       s.push(i, value[i]);
       result[i] = callback(this, i);
@@ -177,16 +131,14 @@ FPp.map = function map(callback /*, name1, name2, ... */) {
   return result;
 };
 
-// Inspired by require("ast-types").NodePath.prototype.needsParens, but
-// more efficient because we're iterating backwards through a stack.
-FPp.needsParens = function(assumeExpressionContext) {
-  var parent = this.getParentNode();
+FastPath.prototype.needsParens = function(options) {
+  const parent = this.getParentNode();
   if (!parent) {
     return false;
   }
 
-  var name = this.getName();
-  var node = this.getNode();
+  const name = this.getName();
+  const node = this.getNode();
 
   // If the value of this path is some child of a Node and not a Node
   // itself, then it doesn't need parentheses. Only Node objects (in
@@ -196,8 +148,14 @@ FPp.needsParens = function(assumeExpressionContext) {
   }
 
   // Only statements don't need parentheses.
-  if (n.Statement.check(node)) {
+  if (isStatement(node)) {
     return false;
+  }
+
+  // Closure compiler requires that type casted expressions to be surrounded by
+  // parentheses.
+  if (util.hasClosureCompilerTypeCastComment(options.originalText, node)) {
+    return true;
   }
 
   // Identifiers never need parentheses.
@@ -232,94 +190,154 @@ FPp.needsParens = function(assumeExpressionContext) {
     return true;
   }
 
-  // The left-hand side of the ** exponentiation operator must always
-  // be parenthesized unless it's an ident or literal
   if (
-    parent.type === "BinaryExpression" &&
-    parent.operator === "**" &&
-    parent.left === node &&
-    node.type !== "Identifier" &&
-    node.type !== "Literal" &&
-    node.type !== "NumericLiteral"
+    (parent.type === "ArrowFunctionExpression" &&
+    parent.body === node &&
+    node.type !== "SequenceExpression" && // these have parens added anyway
+      startsWithNoLookaheadToken(node, /* forbidFunctionAndClass */ false)) ||
+    (parent.type === "ExpressionStatement" &&
+      startsWithNoLookaheadToken(node, /* forbidFunctionAndClass */ true))
   ) {
     return true;
   }
 
   switch (node.type) {
+    case "CallExpression": {
+      let firstParentNotMemberExpression = parent;
+      let i = 0;
+      while (
+        firstParentNotMemberExpression &&
+        firstParentNotMemberExpression.type === "MemberExpression"
+      ) {
+        firstParentNotMemberExpression = this.getParentNode(++i);
+      }
+
+      if (
+        firstParentNotMemberExpression.type === "NewExpression" &&
+        firstParentNotMemberExpression.callee === this.getParentNode(i - 1)
+      ) {
+        return true;
+      }
+      return false;
+    }
+
     case "SpreadElement":
     case "SpreadProperty":
-      return parent.type === "MemberExpression" &&
+      return (
+        parent.type === "MemberExpression" &&
         name === "object" &&
-        parent.object === node;
+        parent.object === node
+      );
 
     case "UpdateExpression":
+      if (parent.type === "UnaryExpression") {
+        return (
+          node.prefix &&
+          ((node.operator === "++" && parent.operator === "+") ||
+            (node.operator === "--" && parent.operator === "-"))
+        );
+      }
+    // else fallthrough
+    case "UnaryExpression":
       switch (parent.type) {
+        case "UnaryExpression":
+          return (
+            node.operator === parent.operator &&
+            (node.operator === "+" || node.operator === "-")
+          );
+
         case "MemberExpression":
           return name === "object" && parent.object === node;
 
         case "TaggedTemplateExpression":
-        case "CallExpression":
-        case "NewExpression":
           return true;
 
-        case "UnaryExpression":
-          if (
-            node.prefix &&
-            (node.operator === "++" && parent.operator === "+" ||
-              node.operator === "--" && parent.operator === "-")
-          ) {
-            return true;
-          }
+        case "NewExpression":
+        case "CallExpression":
+          return name === "callee" && parent.callee === node;
 
+        case "BinaryExpression":
+          return parent.operator === "**" && name === "left";
+
+        default:
           return false;
       }
 
-    case "UnaryExpression":
-      switch (parent.type) {
-        case "UnaryExpression":
-          return node.operator === parent.operator &&
-            (node.operator === "+" || node.operator === "-");
-
-        case "MemberExpression":
-          return name === "object" && parent.object === node;
-      }
-
-    case "BinaryExpression":
-      if (
-        node.operator === "in" &&
-        parent.type === "ForStatement" &&
-        parent.init === node
-      ) {
+    case "BinaryExpression": {
+      if (parent.type === "UpdateExpression") {
         return true;
       }
 
-      if (node.operator === "in" && parent.type === "AssignmentExpression") {
+      const isLeftOfAForStatement = node => {
+        let i = 0;
+        while (node) {
+          const parent = this.getParentNode(i++);
+          if (!parent) {
+            return false;
+          }
+          if (parent.type === "ForStatement" && parent.init === node) {
+            return true;
+          }
+          node = parent;
+        }
+        return false;
+      };
+      if (node.operator === "in" && isLeftOfAForStatement(node)) {
         return true;
       }
-
+    }
+    // fallthrough
+    case "TSTypeAssertionExpression":
+    case "TSAsExpression":
     case "LogicalExpression":
       switch (parent.type) {
+        case "ConditionalExpression":
+          return node.type === "TSAsExpression";
+
         case "CallExpression":
         case "NewExpression":
           return name === "callee" && parent.callee === node;
 
+        case "ClassDeclaration":
+          return name === "superClass" && parent.superClass === node;
+        case "TSTypeAssertionExpression":
         case "TaggedTemplateExpression":
         case "UnaryExpression":
         case "SpreadElement":
         case "SpreadProperty":
+        case "ExperimentalSpreadProperty":
+        case "BindExpression":
+        case "AwaitExpression":
+        case "TSAsExpression":
+        case "TSNonNullExpression":
           return true;
 
         case "MemberExpression":
           return name === "object" && parent.object === node;
 
+        case "AssignmentExpression":
+          return (
+            parent.left === node &&
+            (node.type === "TSTypeAssertionExpression" ||
+              node.type === "TSAsExpression")
+          );
+
         case "BinaryExpression":
-        case "LogicalExpression":
-          var po = parent.operator;
-          var pp = util.getPrecedence(po);
-          var no = node.operator;
-          var np = util.getPrecedence(no);
+        case "LogicalExpression": {
+          if (!node.operator && node.type !== "TSTypeAssertionExpression") {
+            return true;
+          }
+
+          const po = parent.operator;
+          const pp = util.getPrecedence(po);
+          const no = node.operator;
+          const np = util.getPrecedence(no);
 
           if (pp > np) {
+            return true;
+          }
+
+          if ((po === "||" || po === "??") && no === "&&") {
             return true;
           }
 
@@ -328,9 +346,43 @@ FPp.needsParens = function(assumeExpressionContext) {
             return true;
           }
 
+          if (pp === np && !util.shouldFlatten(po, no)) {
+            return true;
+          }
+
+          // Add parenthesis when working with binary operators
+          // It's not stricly needed but helps with code understanding
+          if (util.isBitwiseOperator(po)) {
+            return true;
+          }
+
+          return false;
+        }
+
         default:
           return false;
       }
+
+    case "TSParenthesizedType": {
+      const grandParent = this.getParentNode(1);
+      if (
+        (parent.type === "TypeParameter" ||
+          parent.type === "VariableDeclarator" ||
+          parent.type === "TypeAnnotation" ||
+          parent.type === "GenericTypeAnnotation" ||
+          parent.type === "TSTypeReference") &&
+        (node.typeAnnotation.type === "TypeAnnotation" &&
+          node.typeAnnotation.typeAnnotation.type !== "TSFunctionType" &&
+          grandParent.type !== "TSTypeOperator")
+      ) {
+        return false;
+      }
+      // Delegate to inner TSParenthesizedType
+      if (node.typeAnnotation.type === "TSParenthesizedType") {
+        return false;
+      }
+      return true;
+    }
 
     case "SequenceExpression":
       switch (parent.type) {
@@ -347,6 +399,11 @@ FPp.needsParens = function(assumeExpressionContext) {
         case "ExpressionStatement":
           return name !== "expression";
 
+        case "ArrowFunctionExpression":
+          // We do need parentheses, but SequenceExpressions are handled
+          // specially when printing bodies of arrow functions.
+          return name !== "body";
+
         default:
           // Otherwise err on the side of overparenthesization, adding
           // explicit exceptions above if this proves overzealous.
@@ -354,9 +411,15 @@ FPp.needsParens = function(assumeExpressionContext) {
       }
 
     case "YieldExpression":
-      if (parent.type === "UnaryExpression") {
+      if (
+        parent.type === "UnaryExpression" ||
+        parent.type === "AwaitExpression" ||
+        parent.type === "TSAsExpression" ||
+        parent.type === "TSNonNullExpression"
+      ) {
         return true;
       }
+    // else fallthrough
     case "AwaitExpression":
       switch (parent.type) {
         case "TaggedTemplateExpression":
@@ -364,10 +427,14 @@ FPp.needsParens = function(assumeExpressionContext) {
         case "LogicalExpression":
         case "SpreadElement":
         case "SpreadProperty":
-        case "NewExpression":
-        case "MemberExpression":
+        case "TSAsExpression":
+        case "TSNonNullExpression":
           return true;
 
+        case "MemberExpression":
+          return parent.object === node;
+
+        case "NewExpression":
         case "CallExpression":
           return parent.callee === node;
 
@@ -383,33 +450,88 @@ FPp.needsParens = function(assumeExpressionContext) {
 
     case "IntersectionTypeAnnotation":
     case "UnionTypeAnnotation":
-      return parent.type === "NullableTypeAnnotation" ||
+      return (
+        parent.type === "ArrayTypeAnnotation" ||
+        parent.type === "NullableTypeAnnotation" ||
         parent.type === "IntersectionTypeAnnotation" ||
-        parent.type === "UnionTypeAnnotation";
+        parent.type === "UnionTypeAnnotation"
+      );
 
     case "NullableTypeAnnotation":
       return parent.type === "ArrayTypeAnnotation";
 
     case "FunctionTypeAnnotation":
-      return parent.type === "UnionTypeAnnotation" ||
-        parent.type === "IntersectionTypeAnnotation";
+      return (
+        parent.type === "UnionTypeAnnotation" ||
+        parent.type === "IntersectionTypeAnnotation" ||
+        parent.type === "ArrayTypeAnnotation"
+      );
 
+    case "StringLiteral":
     case "NumericLiteral":
     case "Literal":
-      return parent.type === "MemberExpression" &&
-        isNumber.check(node.value) &&
-        name === "object" &&
-        parent.object === node;
-
-    case "AssignmentExpression":
       if (
-        parent.type === "ArrowFunctionExpression" &&
-        parent.body === node &&
-        node.left.type === "ObjectPattern"
+        typeof node.value === "string" &&
+        parent.type === "ExpressionStatement" &&
+        // TypeScript workaround for eslint/typescript-eslint-parser#267
+        // See corresponding workaround in printer.js case: "Literal"
+        ((options.parser !== "typescript" && !parent.directive) ||
+          (options.parser === "typescript" &&
+            options.originalText.substr(util.locStart(node) - 1, 1) === "("))
       ) {
-        return true;
+        // To avoid becoming a directive
+        const grandParent = this.getParentNode(1);
+
+        return (
+          grandParent.type === "Program" ||
+          grandParent.type === "BlockStatement"
+        );
       }
 
+      return (
+        parent.type === "MemberExpression" &&
+        typeof node.value === "number" &&
+        name === "object" &&
+        parent.object === node
+      );
+
+    case "AssignmentExpression": {
+      const grandParent = this.getParentNode(1);
+
+      if (parent.type === "ArrowFunctionExpression" && parent.body === node) {
+        return true;
+      } else if (
+        parent.type === "ClassProperty" &&
+        parent.key === node &&
+        parent.computed
+      ) {
+        return false;
+      } else if (
+        parent.type === "TSPropertySignature" &&
+        parent.name === node
+      ) {
+        return false;
+      } else if (
+        parent.type === "ForStatement" &&
+        (parent.init === node || parent.update === node)
+      ) {
+        return false;
+      } else if (parent.type === "ExpressionStatement") {
+        return node.left.type === "ObjectPattern";
+      } else if (parent.type === "TSPropertySignature" && parent.key === node) {
+        return false;
+      } else if (parent.type === "AssignmentExpression") {
+        return false;
+      } else if (
+        parent.type === "SequenceExpression" &&
+        grandParent &&
+        grandParent.type === "ForStatement" &&
+        (grandParent.init === parent || grandParent.update === parent)
+      ) {
+        return false;
+      }
+      return true;
+    }
     case "ConditionalExpression":
       switch (parent.type) {
         case "TaggedTemplateExpression":
@@ -418,12 +540,15 @@ FPp.needsParens = function(assumeExpressionContext) {
         case "SpreadProperty":
         case "BinaryExpression":
         case "LogicalExpression":
-        case "LogicalExpression":
-        case "NewExpression":
         case "ExportDefaultDeclaration":
         case "AwaitExpression":
+        case "JSXSpreadAttribute":
+        case "TSTypeAssertionExpression":
+        case "TSAsExpression":
+        case "TSNonNullExpression":
           return true;
 
+        case "NewExpression":
         case "CallExpression":
           return name === "callee" && parent.callee === node;
 
@@ -434,198 +559,106 @@ FPp.needsParens = function(assumeExpressionContext) {
           return name === "object" && parent.object === node;
 
         default:
-          return n.ObjectPattern.check(node.left) && this.firstInStatement();
+          return false;
       }
 
     case "FunctionExpression":
-    case "ArrowFunctionExpression":
-      if (parent.type === "CallExpression" && name === "callee") {
-        return true;
+      switch (parent.type) {
+        case "CallExpression":
+          return name === "callee"; // Not strictly necessary, but it's clearer to the reader if IIFEs are wrapped in parentheses.
+        case "TaggedTemplateExpression":
+          return true; // This is basically a kind of IIFE.
+        case "ExportDefaultDeclaration":
+          return true;
+        default:
+          return false;
       }
 
+    case "ArrowFunctionExpression":
       switch (parent.type) {
-        case "ConditionalExpression":
-          if (parent.test === node) {
-            return true;
-          }
-
-        case "ExportDefaultDeclaration":
-          return node.type !== "ArrowFunctionExpression";
-
-        case "ExpressionStatement":
-        case "MemberExpression":
-        case "TaggedTemplateExpression":
-        case "UnaryExpression":
-          return true;
+        case "CallExpression":
+          return name === "callee";
 
         case "NewExpression":
           return name === "callee";
 
+        case "MemberExpression":
+          return name === "object";
+
+        case "TSAsExpression":
+        case "BindExpression":
+        case "TaggedTemplateExpression":
+        case "UnaryExpression":
         case "LogicalExpression":
-          return node.type === "ArrowFunctionExpression";
+        case "BinaryExpression":
+        case "AwaitExpression":
+        case "TSTypeAssertionExpression":
+          return true;
+
+        case "ConditionalExpression":
+          return name === "test";
 
         default:
-          return isBinary(parent);
+          return false;
       }
 
     case "ClassExpression":
-      switch (parent.type) {
-        case "TaggedTemplateExpression":
-        case "BinaryExpression":
-        case "ExportDefaultDeclaration":
-        case "ExpressionStatement":
-          return true;
-        case "CallExpression":
-          if (parent.callee === node) {
-            return true;
-          }
-        case "MemberExpression":
-          return name === "object" && parent.object === node;
-        case "ConditionalExpression":
-          if (parent.test === node) {
-            return true;
-          }
-      }
-
-      return false;
-
-    case "ObjectExpression":
-      if (parent.type === "ArrowFunctionExpression" && name === "body") {
-        return true;
-      }
-      if (parent.type === "TaggedTemplateExpression") {
-        return true;
-      }
-      if (parent.type === "MemberExpression") {
-        return name === "object" && parent.object === node;
-      }
-
-    case "StringLiteral":
-      if (parent.type === "ExpressionStatement") {
-        return true;
-      }
-
-    default:
-      if (
-        parent.type === "NewExpression" &&
-        name === "callee" &&
-        parent.callee === node
-      ) {
-        return containsCallExpression(node);
-      }
-  }
-
-  if (
-    assumeExpressionContext !== true &&
-    !this.canBeFirstInStatement() &&
-    this.firstInStatement()
-  )
-    return true;
-
-  return false;
-};
-
-function isBinary(node) {
-  return n.BinaryExpression.check(node) || n.LogicalExpression.check(node);
-}
-
-function containsCallExpression(node) {
-  if (n.CallExpression.check(node)) {
-    return true;
-  }
-
-  if (isArray.check(node)) {
-    return node.some(containsCallExpression);
-  }
-
-  if (n.Node.check(node)) {
-    return types.someField(node, function(name, child) {
-      return containsCallExpression(child);
-    });
+      return parent.type === "ExportDefaultDeclaration";
   }
 
   return false;
+};
+
+function isStatement(node) {
+  return (
+    node.type === "BlockStatement" ||
+    node.type === "BreakStatement" ||
+    node.type === "ClassBody" ||
+    node.type === "ClassDeclaration" ||
+    node.type === "ClassMethod" ||
+    node.type === "ClassProperty" ||
+    node.type === "ClassPrivateProperty" ||
+    node.type === "ContinueStatement" ||
+    node.type === "DebuggerStatement" ||
+    node.type === "DeclareClass" ||
+    node.type === "DeclareExportAllDeclaration" ||
+    node.type === "DeclareExportDeclaration" ||
+    node.type === "DeclareFunction" ||
+    node.type === "DeclareInterface" ||
+    node.type === "DeclareModule" ||
+    node.type === "DeclareModuleExports" ||
+    node.type === "DeclareVariable" ||
+    node.type === "DoWhileStatement" ||
+    node.type === "ExportAllDeclaration" ||
+    node.type === "ExportDefaultDeclaration" ||
+    node.type === "ExportNamedDeclaration" ||
+    node.type === "ExpressionStatement" ||
+    node.type === "ForAwaitStatement" ||
+    node.type === "ForInStatement" ||
+    node.type === "ForOfStatement" ||
+    node.type === "ForStatement" ||
+    node.type === "FunctionDeclaration" ||
+    node.type === "IfStatement" ||
+    node.type === "ImportDeclaration" ||
+    node.type === "InterfaceDeclaration" ||
+    node.type === "LabeledStatement" ||
+    node.type === "MethodDefinition" ||
+    node.type === "ReturnStatement" ||
+    node.type === "SwitchStatement" ||
+    node.type === "ThrowStatement" ||
+    node.type === "TryStatement" ||
+    node.type === "TSAbstractClassDeclaration" ||
+    node.type === "TSEnumDeclaration" ||
+    node.type === "TSImportEqualsDeclaration" ||
+    node.type === "TSInterfaceDeclaration" ||
+    node.type === "TSModuleDeclaration" ||
+    node.type === "TSNamespaceExportDeclaration" ||
+    node.type === "TSNamespaceFunctionDeclaration" ||
+    node.type === "TypeAlias" ||
+    node.type === "VariableDeclaration" ||
+    node.type === "WhileStatement" ||
+    node.type === "WithStatement"
+  );
 }
-
-FPp.canBeFirstInStatement = function() {
-  var node = this.getNode();
-  return !n.FunctionExpression.check(node) &&
-    !n.ObjectExpression.check(node) &&
-    !n.ClassExpression.check(node) &&
-    !(n.AssignmentExpression.check(node) && n.ObjectPattern.check(node.left));
-};
-
-FPp.firstInStatement = function() {
-  var s = this.stack;
-  var parentName, parent;
-  var childName, child;
-
-  for (var i = s.length - 1; i >= 0; i -= 2) {
-    if (n.Node.check(s[i])) {
-      childName = parentName;
-      child = parent;
-      parentName = s[i - 1];
-      parent = s[i];
-    }
-
-    if (!parent || !child) {
-      continue;
-    }
-
-    if (
-      n.BlockStatement.check(parent) && parentName === "body" && childName === 0
-    ) {
-      assert.strictEqual(parent.body[0], child);
-      return true;
-    }
-
-    if (n.ExpressionStatement.check(parent) && childName === "expression") {
-      assert.strictEqual(parent.expression, child);
-      return true;
-    }
-
-    if (
-      n.SequenceExpression.check(parent) &&
-      parentName === "expressions" &&
-      childName === 0
-    ) {
-      assert.strictEqual(parent.expressions[0], child);
-      continue;
-    }
-
-    if (n.CallExpression.check(parent) && childName === "callee") {
-      assert.strictEqual(parent.callee, child);
-      continue;
-    }
-
-    if (n.MemberExpression.check(parent) && childName === "object") {
-      assert.strictEqual(parent.object, child);
-      continue;
-    }
-
-    if (n.ConditionalExpression.check(parent) && childName === "test") {
-      assert.strictEqual(parent.test, child);
-      continue;
-    }
-
-    if (isBinary(parent) && childName === "left") {
-      assert.strictEqual(parent.left, child);
-      continue;
-    }
-
-    if (
-      n.UnaryExpression.check(parent) &&
-      !parent.prefix &&
-      childName === "argument"
-    ) {
-      assert.strictEqual(parent.argument, child);
-      continue;
-    }
-
-    return false;
-  }
-
-  return true;
-};
 
 module.exports = FastPath;

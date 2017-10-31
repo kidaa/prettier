@@ -1,27 +1,29 @@
-exports[`test Parent.js 1`] = `
-"// @flow
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-var ParentFoo = {foo: \'bar\'};
+exports[`Parent.js 1`] = `
+// @flow
+
+var ParentFoo = {foo: 'bar'};
 module.exports = {ParentFoo};
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // @flow
 
-var ParentFoo = { foo: \"bar\" };
+var ParentFoo = { foo: "bar" };
 module.exports = { ParentFoo };
-"
+
 `;
 
-exports[`test main.js 1`] = `
-"// @flow
+exports[`main.js 1`] = `
+// @flow
 
-var Parent = require(\'./Parent\');
+var Parent = require('./Parent');
 
 // Hops through destructuring
 let ParentFoo;
 ({ParentFoo} = Parent);
 ParentFoo; // Points to lval in line above this
 
-// Follows assignment on simple/\"non-destructuring\" patterns
+// Follows assignment on simple/"non-destructuring" patterns
 let ParentFoo2;
 ParentFoo2 = Parent;
 ParentFoo2; // Points to LHS of line above this
@@ -30,22 +32,23 @@ ParentFoo2; // Points to LHS of line above this
 let ParentFoo3 = Parent;
 ParentFoo3; // Points to LHS of line above this
 
-// Follows non-destructured property access of \`require(\'Parent\')\`
-let foo = require(\'./Parent\').ParentFoo.foo;
+// Follows non-destructured property access of \`require('Parent')\`
+let foo = require('./Parent').ParentFoo.foo;
 foo;
 
-import type {Foo} from \'./types\';
+import type {Foo} from './types';
+function takesFoo(foo: Foo) { }
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // @flow
 
-var Parent = require(\"./Parent\");
+var Parent = require("./Parent");
 
 // Hops through destructuring
 let ParentFoo;
 ({ ParentFoo } = Parent);
 ParentFoo; // Points to lval in line above this
 
-// Follows assignment on simple/\"non-destructuring\" patterns
+// Follows assignment on simple/"non-destructuring" patterns
 let ParentFoo2;
 ParentFoo2 = Parent;
 ParentFoo2; // Points to LHS of line above this
@@ -54,16 +57,17 @@ ParentFoo2; // Points to LHS of line above this
 let ParentFoo3 = Parent;
 ParentFoo3; // Points to LHS of line above this
 
-// Follows non-destructured property access of \`require(\'Parent\')\`
-let foo = require(\"./Parent\").ParentFoo.foo;
+// Follows non-destructured property access of \`require('Parent')\`
+let foo = require("./Parent").ParentFoo.foo;
 foo;
 
-import type { Foo } from \"./types\";
-"
+import type { Foo } from "./types";
+function takesFoo(foo: Foo) {}
+
 `;
 
-exports[`test override.js 1`] = `
-"// @flow
+exports[`override.js 1`] = `
+// @flow
 
 class C {
   override() { }
@@ -90,43 +94,43 @@ class D extends C {
   }
   override() {}
 }
-"
+
 `;
 
-exports[`test react.js 1`] = `
-"var React = require(\'react\');
+exports[`react.js 1`] = `
+var React = require('react');
 
 class C extends React.Component {
   props: { x: string };
 }
 
-let msg = \"hello\";
+let msg = "hello";
 
 (<C x={msg}/>);
 
 (<div id={msg}/>);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-var React = require(\"react\");
+var React = require("react");
 
 class C extends React.Component {
   props: { x: string };
 }
 
-let msg = \"hello\";
+let msg = "hello";
 
 <C x={msg} />;
 
 <div id={msg} />;
-"
+
 `;
 
-exports[`test types.js 1`] = `
-"// @flow
+exports[`types.js 1`] = `
+// @flow
 
 export type Foo = {};
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // @flow
 
 export type Foo = {};
-"
+
 `;

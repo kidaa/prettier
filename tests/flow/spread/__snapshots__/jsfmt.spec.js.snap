@@ -1,5 +1,7 @@
-exports[`test test.js 1`] = `
-"function parseTimestamp(timestamp: string): number {
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`test.js 1`] = `
+function parseTimestamp(timestamp: string): number {
     return 0;
 }
 
@@ -23,7 +25,7 @@ function parseGroup(lines: Array<string>): {
 }
 
 function parseTimeframe(line: string): { begin: number; end: number } {
-    var timestamps = line.split(\'-->\');
+    var timestamps = line.split('-->');
     return {
         begin: parseTimestamp(timestamps[0].trim()),
         end: parseTimestamp(timestamps[1].trim())
@@ -56,17 +58,17 @@ function parseGroup(
 }
 
 function parseTimeframe(line: string): { begin: number, end: number } {
-  var timestamps = line.split(\"-->\");
+  var timestamps = line.split("-->");
   return {
     begin: parseTimestamp(timestamps[0].trim()),
     end: parseTimestamp(timestamps[1].trim())
   };
 }
-"
+
 `;
 
-exports[`test test2.js 1`] = `
-"/**
+exports[`test2.js 1`] = `
+/**
  * @flow
  */
 
@@ -85,12 +87,12 @@ function foo(o) {
 }
 function bar(_: { foo: number }) {}
 foo({ foo: 42 });
-"
+
 `;
 
-exports[`test test3.js 1`] = `
-"var p = { y: \"\" };
-var q = { z: \"\" };
+exports[`test3.js 1`] = `
+var p = { y: "" };
+var q = { z: "" };
 var o = {
   x: 5,
   ...p,
@@ -107,8 +109,8 @@ var s = {
 };
 var t: boolean = s.y; // error, string or number
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-var p = { y: \"\" };
-var q = { z: \"\" };
+var p = { y: "" };
+var q = { z: "" };
 var o = {
   x: 5,
   ...p,
@@ -124,11 +126,11 @@ var s = {
   ...r
 };
 var t: boolean = s.y; // error, string or number
-"
+
 `;
 
-exports[`test test4.js 1`] = `
-"/* @flow */
+exports[`test4.js 1`] = `
+/* @flow */
 function test(...nums: Array<number>) {}
 
 test(0, ...[1, 2, 3]);
@@ -137,11 +139,11 @@ test(0, ...[1, 2, 3]);
 function test(...nums: Array<number>) {}
 
 test(0, ...[1, 2, 3]);
-"
+
 `;
 
-exports[`test test5.js 1`] = `
-"/* @flow */
+exports[`test5.js 1`] = `
+/* @flow */
 
 declare function map<Tv, TNext>(
   obj: {[key: string]: Tv},
@@ -192,25 +194,25 @@ function test(
     };
   });
 }
-"
+
 `;
 
-exports[`test test6.js 1`] = `
-"var o = {
-  foo: \'bar\'
+exports[`test6.js 1`] = `
+var o = {
+  foo: 'bar'
 };
 o = {...o};
 (o: {foo: string});
 
 var p = {
-  foo: \'bar\'
+  foo: 'bar'
 };
-(p: {foo: string; abc: string}); // error, p doesn\'t have \`abc\` yet
-p = {...p, abc: \'def\'};
+(p: {foo: string; abc: string}); // error, p doesn't have \`abc\` yet
+p = {...p, abc: 'def'};
 (p: {foo: string; abc: string});
 
 var q = {
-  foo: \'bar\'
+  foo: 'bar'
 };
 for (var i = 0; i < 10; i++) {
   q = {...q};
@@ -218,30 +220,30 @@ for (var i = 0; i < 10; i++) {
 (q: {foo: string});
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 var o = {
-  foo: \"bar\"
+  foo: "bar"
 };
 o = { ...o };
 (o: { foo: string });
 
 var p = {
-  foo: \"bar\"
+  foo: "bar"
 };
-(p: { foo: string, abc: string }); // error, p doesn\'t have \`abc\` yet
-p = { ...p, abc: \"def\" };
+(p: { foo: string, abc: string }); // error, p doesn't have \`abc\` yet
+p = { ...p, abc: "def" };
 (p: { foo: string, abc: string });
 
 var q = {
-  foo: \"bar\"
+  foo: "bar"
 };
 for (var i = 0; i < 10; i++) {
   q = { ...q };
 }
 (q: { foo: string });
-"
+
 `;
 
-exports[`test test7.js 1`] = `
-"// @flow
+exports[`test7.js 1`] = `
+// @flow
 
 let tests = [
   function(x: Object) {
@@ -258,5 +260,5 @@ let tests = [
     ({ ...x }: void); // error, Object
   }
 ];
-"
+
 `;

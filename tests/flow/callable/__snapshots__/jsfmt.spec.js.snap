@@ -1,5 +1,7 @@
-exports[`test optional.js 1`] = `
-"type F = {
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`optional.js 1`] = `
+type F = {
   (x: string): number;
   p?: string;
 }
@@ -20,11 +22,11 @@ function f(x) {
 }
 
 (f: F);
-"
+
 `;
 
-exports[`test primitives.js 1`] = `
-"var x = Boolean(4);
+exports[`primitives.js 1`] = `
+var x = Boolean(4);
 function foo(fn:(value:any)=>boolean) { }
 foo(Boolean);
 
@@ -54,7 +56,7 @@ var dict: { [k: string]: any } = {};
 dict(); // error, callable signature not found
 
 interface ICall {
-  (x: string): void
+  (x: string): void;
 }
 declare var icall: ICall;
 icall(0); // error, number ~> string
@@ -67,5 +69,5 @@ type Callable = {
 declare var callable: Callable;
 callable(0); // error, number ~> string
 callable.call(null, 0); // error, number ~> string
-"
+
 `;

@@ -1,5 +1,7 @@
-exports[`test b0.js 1`] = `
-"// @flow
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`b0.js 1`] = `
+// @flow
 
 class C { x: C; }
 class E extends C { x: C; }
@@ -16,5 +18,5 @@ class E extends C {
 }
 
 module.exports = { C, E };
-"
+
 `;

@@ -1,5 +1,7 @@
-exports[`test import.js 1`] = `
-"// @flow
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`import.js 1`] = `
+// @flow
 var num = 42;
 function bar() { }
 bar();
@@ -10,12 +12,12 @@ var num = 42;
 function bar() {}
 bar();
 module.exports = num;
-"
+
 `;
 
-exports[`test test.js 1`] = `
-"// @flow
-var num = require(\'./import\');
+exports[`test.js 1`] = `
+// @flow
+var num = require('./import');
 function foo(x) { }
 foo(0);
 var a:string = num;
@@ -37,7 +39,7 @@ declare var obj: {a?: {b: ?{c: null | {d: number}}}};
 const idxResult = idx(obj, obj => obj.a.b.c.d);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // @flow
-var num = require(\"./import\");
+var num = require("./import");
 function foo(x) {}
 foo(0);
 var a: string = num;
@@ -47,7 +49,7 @@ function unannotated(x) {
 }
 
 // test deduping of inferred types
-const nullToUndefined = val => val === null ? undefined : val;
+const nullToUndefined = val => (val === null ? undefined : val);
 
 function f0(x: ?Object) {
   return nullToUndefined(x);
@@ -65,5 +67,5 @@ function f3(x: ?string) {
 declare var idx: $Facebookism$Idx;
 declare var obj: { a?: { b: ?{ c: null | { d: number } } } };
 const idxResult = idx(obj, obj => obj.a.b.c.d);
-"
+
 `;

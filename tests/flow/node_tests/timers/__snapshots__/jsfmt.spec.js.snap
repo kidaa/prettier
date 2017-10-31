@@ -1,5 +1,7 @@
-exports[`test timers.js 1`] = `
-"// @flow
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`timers.js 1`] = `
+// @flow
 
 function setImmediateCallback(): number {
   return 0;
@@ -14,5 +16,5 @@ function setImmediateCallback(): number {
 }
 
 setImmediate(setImmediateCallback);
-"
+
 `;

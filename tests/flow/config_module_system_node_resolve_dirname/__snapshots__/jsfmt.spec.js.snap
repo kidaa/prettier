@@ -1,16 +1,18 @@
-exports[`test toplevel.js 1`] = `
-"// @flow
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-import {name} from \"testproj\";
+exports[`toplevel.js 1`] = `
+// @flow
 
-(name: \"node_modules/testproj\");
-(name: \"custom_resolve_dir/testproj\"); // Error: Resolve from node_modules first!
+import {name} from "testproj";
+
+(name: "node_modules/testproj");
+(name: "custom_resolve_dir/testproj"); // Error: Resolve from node_modules first!
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // @flow
 
-import { name } from \"testproj\";
+import { name } from "testproj";
 
-(name: \"node_modules/testproj\");
-(name: \"custom_resolve_dir/testproj\"); // Error: Resolve from node_modules first!
-"
+(name: "node_modules/testproj");
+(name: "custom_resolve_dir/testproj"); // Error: Resolve from node_modules first!
+
 `;

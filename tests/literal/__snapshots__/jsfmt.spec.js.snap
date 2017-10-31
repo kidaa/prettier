@@ -1,5 +1,7 @@
-exports[`test number.js 1`] = `
-"// parentheses around numeric literal should be preserved
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`number.js 1`] = `
+// parentheses around numeric literal should be preserved
 function test5(): string {
   return (100).toString();
 }
@@ -56,6 +58,37 @@ function test5(): string {
 1.1E0010
 .1E+0010
 .1E-0010
+
+0.5e0
+0.5e00
+0.5e+0
+0.5e+00
+0.5e-0
+0.5e-00
+
+1
+1.00500
+1.0
+1.5
+1.50
+0
+0.00500
+0.0
+0.0000
+.0
+500600.001230045000
+1.00500e60
+1.0e60
+0.00500e60
+0.0e60
+0.0000e60
+.0e60
+0.e60
+0e60
+500600.001230045000e60
+10
+9700
+10e100
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // parentheses around numeric literal should be preserved
 function test5(): string {
@@ -114,5 +147,36 @@ function test5(): string {
 1.1e10;
 0.1e10;
 0.1e-10;
-"
+
+0.5;
+0.5;
+0.5;
+0.5;
+0.5;
+0.5;
+
+1;
+1.005;
+1.0;
+1.5;
+1.5;
+0;
+0.005;
+0.0;
+0.0;
+0.0;
+500600.001230045;
+1.005e60;
+1.0e60;
+0.005e60;
+0.0e60;
+0.0e60;
+0.0e60;
+0e60;
+0e60;
+500600.001230045e60;
+10;
+9700;
+10e100;
+
 `;

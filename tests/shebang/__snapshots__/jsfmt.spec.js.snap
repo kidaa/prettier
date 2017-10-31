@@ -1,19 +1,21 @@
-exports[`test shebang.js 1`] = `
-"#!/usr/bin/env node
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`shebang.js 1`] = `
+#!/usr/bin/env node
 function a() {}
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #!/usr/bin/env node
 function a() {}
-"
+
 `;
 
-exports[`test shebang-newline.js 1`] = `
-"#!/usr/bin/env node
+exports[`shebang-newline.js 1`] = `
+#!/usr/bin/env node
 
 function a() {}
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #!/usr/bin/env node
 
 function a() {}
-"
+
 `;

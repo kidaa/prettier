@@ -1,5 +1,7 @@
-exports[`test d1.js 1`] = `
-"// @flow
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`d1.js 1`] = `
+// @flow
 
 export class A {}
 export class B {}
@@ -10,5 +12,5 @@ export var x = new B;
 export class A {}
 export class B {}
 export var x = new B();
-"
+
 `;

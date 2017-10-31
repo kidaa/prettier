@@ -1,5 +1,7 @@
-exports[`test function_expression.js 1`] = `
-"(function() {}).length
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`function_expression.js 1`] = `
+(function() {}).length
 typeof (function() {});
 export default (function() {})();
 (function() {})()\`\`;
@@ -7,14 +9,51 @@ export default (function() {})();
 new (function() {});
 (function() {});
 a = function f() {} || b;
+(function() {} && a);
+a + function() {};
+new function() {};
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-(function() {}).length;
-typeof (function() {});
+(function() {}.length);
+typeof function() {};
 export default (function() {})();
 (function() {})()\`\`;
 (function() {})\`\`;
-new (function() {})();
+new function() {}();
 (function() {});
 a = function f() {} || b;
-"
+(function() {} && a);
+a + function() {};
+new function() {}();
+
+`;
+
+exports[`single_expand.js 1`] = `
+function onDidInsertSuggestion({
+  editor,
+  triggerPosition,
+  re
+}): Promise<void> {
+}
+
+class X {
+  async onDidInsertSuggestion({editor, triggerPosition, suggestion}): Promise<
+    void
+  > {
+  }
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function onDidInsertSuggestion({
+  editor,
+  triggerPosition,
+  re
+}): Promise<void> {}
+
+class X {
+  async onDidInsertSuggestion({
+    editor,
+    triggerPosition,
+    suggestion
+  }): Promise<void> {}
+}
+
 `;

@@ -1,9 +1,11 @@
-exports[`test a1.js 1`] = `
-"// @flow
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`a1.js 1`] = `
+// @flow
 
 function foo(x: number): number { return 5; }
 
-foo(\"\");
+foo("");
 
 module.exports = foo;
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -13,8 +15,8 @@ function foo(x: number): number {
   return 5;
 }
 
-foo(\"\");
+foo("");
 
 module.exports = foo;
-"
+
 `;

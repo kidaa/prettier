@@ -1,10 +1,12 @@
-exports[`test class.js 1`] = `
-"class A {
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`class.js 1`] = `
+class A {
   method() {
     var x = 1;
-    while(typeof x == \"number\" || typeof x == \"string\") {
+    while(typeof x == "number" || typeof x == "string") {
         x = x + 1;
-        if (true) x = \"\";
+        if (true) x = "";
     }
     var z:number = x;
   }
@@ -13,23 +15,23 @@ exports[`test class.js 1`] = `
 class A {
   method() {
     var x = 1;
-    while (typeof x == \"number\" || typeof x == \"string\") {
+    while (typeof x == "number" || typeof x == "string") {
       x = x + 1;
-      if (true) x = \"\";
+      if (true) x = "";
     }
     var z: number = x;
   }
 }
-"
+
 `;
 
-exports[`test class.js 2`] = `
-"class A {
+exports[`class.js 2`] = `
+class A {
   method() {
     var x = 1;
-    while(typeof x == \"number\" || typeof x == \"string\") {
+    while(typeof x == "number" || typeof x == "string") {
         x = x + 1;
-        if (true) x = \"\";
+        if (true) x = "";
     }
     var z:number = x;
   }
@@ -38,18 +40,18 @@ exports[`test class.js 2`] = `
 class A {
     method() {
         var x = 1;
-        while (typeof x == \"number\" || typeof x == \"string\") {
+        while (typeof x == "number" || typeof x == "string") {
             x = x + 1;
-            if (true) x = \"\";
+            if (true) x = "";
         }
         var z: number = x;
     }
 }
-"
+
 `;
 
-exports[`test nested-functions.spec.js 1`] = `
-"const c = () => {};
+exports[`nested-functions.spec.js 1`] = `
+const c = () => {};
 
 function a() {
   return function b() {
@@ -72,11 +74,11 @@ function a() {
     };
   };
 }
-"
+
 `;
 
-exports[`test nested-functions.spec.js 2`] = `
-"const c = () => {};
+exports[`nested-functions.spec.js 2`] = `
+const c = () => {};
 
 function a() {
   return function b() {
@@ -99,5 +101,5 @@ function a() {
         };
     };
 }
-"
+
 `;

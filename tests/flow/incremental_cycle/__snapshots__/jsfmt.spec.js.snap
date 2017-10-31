@@ -1,13 +1,6 @@
-exports[`test A.js 1`] = `
-"// @flow
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-class A {
-  b: number;
-  c: string;
-}
-
-module.exports = A;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+exports[`A.js 1`] = `
 // @flow
 
 class A {
@@ -16,13 +9,22 @@ class A {
 }
 
 module.exports = A;
-"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// @flow
+
+class A {
+  b: number;
+  c: string;
+}
+
+module.exports = A;
+
 `;
 
-exports[`test B.js 1`] = `
-"// @flow
-var A = require (\'./A\');
-import type C from \'./C\';
+exports[`B.js 1`] = `
+// @flow
+var A = require ('./A');
+import type C from './C';
 
 class B extends A {
   c: C;
@@ -31,21 +33,21 @@ class B extends A {
 module.exports = B;
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // @flow
-var A = require(\"./A\");
-import type C from \"./C\";
+var A = require("./A");
+import type C from "./C";
 
 class B extends A {
   c: C;
 }
 
 module.exports = B;
-"
+
 `;
 
-exports[`test C.js 1`] = `
-"// @flow
-var A = require (\'./A\');
-import type B from \'./B\';
+exports[`C.js 1`] = `
+// @flow
+var A = require ('./A');
+import type B from './B';
 
 class C extends A {
   b: B;
@@ -54,13 +56,13 @@ class C extends A {
 module.exports = C;
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // @flow
-var A = require(\"./A\");
-import type B from \"./B\";
+var A = require("./A");
+import type B from "./B";
 
 class C extends A {
   b: B;
 }
 
 module.exports = C;
-"
+
 `;

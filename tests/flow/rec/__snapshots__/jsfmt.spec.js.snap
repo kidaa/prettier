@@ -1,5 +1,7 @@
-exports[`test issue-598.js 1`] = `
-"/* @flow */
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`issue-598.js 1`] = `
+/* @flow */
 
 type F<A> = { foo<B>(x: A): F<B> }
 declare function foo(x: any): F<any>;
@@ -46,11 +48,11 @@ function identity<A>(val: A): Functor<A> {
     }
   };
 }
-"
+
 `;
 
-exports[`test issue-1228.js 1`] = `
-"/* @flow */
+exports[`issue-1228.js 1`] = `
+/* @flow */
 
 type Task <error, value>
   = { chain<tagged>(next:(input:value) => Task<error, tagged>):
@@ -70,11 +72,11 @@ type Task<error, value> = {
 function id(x: Task<any, any>): Task<any, any> {
   return x;
 }
-"
+
 `;
 
-exports[`test test.js 1`] = `
-"class P<X> { x: X; } // this is like Promise
+exports[`test.js 1`] = `
+class P<X> { x: X; } // this is like Promise
 
 type Pstar<X> = X | Pstar<P<X>>; // this is like Promise*
 
@@ -109,11 +111,11 @@ pstar = p; // OK
 
 pstar = (new P(): P<P<number>>); // OK
 (pstar.x: string); // error
-"
+
 `;
 
-exports[`test test2.js 1`] = `
-"var a = []; // Array<X> ~> a
+exports[`test2.js 1`] = `
+var a = []; // Array<X> ~> a
 function bar() {
   a = a.concat([]); // terminate despite expanding types:
   // a ~> .concat(Array<Y>)
@@ -174,11 +176,11 @@ class D<X> {}
 class B<X> extends D<X> {}
 class C<X> extends B<X> {}
 ((new C(): C<number>): D<string>); // error: number ~/~ string
-"
+
 `;
 
-exports[`test test3.js 1`] = `
-"type I<X> = () => I<I<X>>;
+exports[`test3.js 1`] = `
+type I<X> = () => I<I<X>>;
 type J<X> = () => J<J<X>>;
 
 function foo(x: I<number>): J<number> {
@@ -211,18 +213,18 @@ function bar(x: P<number>): () => P<number> {
   // P<number> = () => { x: P<number> }
   // () => P<number> = () => () => { x: P<number> }
 }
-"
+
 `;
 
-exports[`test test4.js 1`] = `
-"type T = T // cycle in type alias should not cause non-termination
+exports[`test4.js 1`] = `
+type T = T // cycle in type alias should not cause non-termination
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 type T = T; // cycle in type alias should not cause non-termination
-"
+
 `;
 
-exports[`test test5.js 1`] = `
-"/* @flow */
+exports[`test5.js 1`] = `
+/* @flow */
 
 type NestedArray<T> = Array<T | NestedArray<T>>;
 
@@ -243,5 +245,5 @@ function flatten<T>(arrArg: NestedArray<T>) {
     arr = Array.prototype.concat.apply([], arr);
   }
 }
-"
+
 `;

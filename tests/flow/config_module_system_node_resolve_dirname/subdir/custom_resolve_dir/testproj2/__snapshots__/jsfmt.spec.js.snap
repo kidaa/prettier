@@ -1,10 +1,13 @@
-exports[`test index.js 1`] = `
-"// @flow
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-export var name: \"subdir/custom_resolve_dir/testproj2\" = \"subdir/custom_resolve_dir/testproj2\";
+exports[`index.js 1`] = `
+// @flow
+
+export var name: "subdir/custom_resolve_dir/testproj2" = "subdir/custom_resolve_dir/testproj2";
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // @flow
 
-export var name: \"subdir/custom_resolve_dir/testproj2\" = \"subdir/custom_resolve_dir/testproj2\";
-"
+export var name: "subdir/custom_resolve_dir/testproj2" =
+  "subdir/custom_resolve_dir/testproj2";
+
 `;

@@ -1,5 +1,7 @@
-exports[`test Arith.js 1`] = `
-"
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Arith.js 1`] = `
+
 /* @providesModule Arith */
 
 function num(x:number) { }
@@ -8,7 +10,7 @@ function str(x:string) { }
 
 function foo() {
   var x = 0;
-  var y = \"...\";
+  var y = "...";
   var z = {};
   num(x+x);
   num(x+y); // error
@@ -54,20 +56,20 @@ num(true + null); // === 1
 num(undefined + true); // === NaN
 num(true + undefined); // === NaN
 
-str(\"foo\" + true); // error
-str(true + \"foo\"); // error
-str(\"foo\" + null); // error
-str(null + \"foo\"); // error
-str(\"foo\" + undefined); // error
-str(undefined + \"foo\"); // error
+str("foo" + true); // error
+str(true + "foo"); // error
+str("foo" + null); // error
+str(null + "foo"); // error
+str("foo" + undefined); // error
+str(undefined + "foo"); // error
 
 let tests = [
   function(x: mixed, y: mixed) {
     (x + y); // error
     (x + 0); // error
     (0 + x); // error
-    (x + \"\"); // error
-    (\"\" + x); // error
+    (x + ""); // error
+    ("" + x); // error
     (x + {}); // error
     ({} + x); // error
   },
@@ -78,8 +80,8 @@ let tests = [
   function() {
     ((1 + {}): number); // error: object !~> number
     (({} + 1): number); // error: object !~> number
-    ((\"1\" + {}): string); // error: object !~> string
-    (({} + \"1\"): string); // error: object !~> string
+    (("1" + {}): string); // error: object !~> string
+    (({} + "1"): string); // error: object !~> string
   },
 
   function(x: any, y: number, z: string) {
@@ -99,7 +101,7 @@ function str(x: string) {}
 
 function foo() {
   var x = 0;
-  var y = \"...\";
+  var y = "...";
   var z = {};
   num(x + x);
   num(x + y); // error
@@ -145,22 +147,22 @@ num(true + null); // === 1
 num(undefined + true); // === NaN
 num(true + undefined); // === NaN
 
-str(\"foo\" + true); // error
-str(true + \"foo\"); // error
-str(\"foo\" + null); // error
-str(null + \"foo\"); // error
-str(\"foo\" + undefined); // error
-str(undefined + \"foo\"); // error
+str("foo" + true); // error
+str(true + "foo"); // error
+str("foo" + null); // error
+str(null + "foo"); // error
+str("foo" + undefined); // error
+str(undefined + "foo"); // error
 
 let tests = [
   function(x: mixed, y: mixed) {
     x + y; // error
     x + 0; // error
     0 + x; // error
-    x + \"\"; // error
-    \"\" + x; // error
+    x + ""; // error
+    "" + x; // error
     x + {}; // error
-    ({}) + x; // error
+    ({} + x); // error
   },
 
   // when one side is a string or number and the other is invalid, we
@@ -169,8 +171,8 @@ let tests = [
   function() {
     (1 + {}: number); // error: object !~> number
     ({} + 1: number); // error: object !~> number
-    (\"1\" + {}: string); // error: object !~> string
-    ({} + \"1\": string); // error: object !~> string
+    ("1" + {}: string); // error: object !~> string
+    ({} + "1": string); // error: object !~> string
   },
 
   function(x: any, y: number, z: string) {
@@ -181,16 +183,16 @@ let tests = [
     (z + x: empty); // error, string ~> empty
   }
 ];
-"
+
 `;
 
-exports[`test exponent.js 1`] = `
-"/* @flow */
+exports[`exponent.js 1`] = `
+/* @flow */
 
 let x: number = 2 ** 3;
 x **= 4;
 
-let y: string = \"123\";
+let y: string = "123";
 y **= 2; // error
 
 1 + 2 ** 3 + 4;
@@ -202,17 +204,17 @@ y **= 2; // error
 let x: number = 2 ** 3;
 x **= 4;
 
-let y: string = \"123\";
+let y: string = "123";
 y **= 2; // error
 
 1 + 2 ** 3 + 4;
 2 ** 2;
 (-2) ** 2;
-"
+
 `;
 
-exports[`test generic.js 1`] = `
-"/* @flow */
+exports[`generic.js 1`] = `
+/* @flow */
 
 function f<A>(a: A): A { return a + a; } // error
 function f<A,B>(a: A, b: B): A {return a + b; } // error
@@ -237,11 +239,11 @@ function f<A, B>(a: A, b: B): B {
 function f<A, B>(a: A, b: B): B {
   return b + a;
 } // error
-"
+
 `;
 
-exports[`test mult.js 1`] = `
-"/* @flow */
+exports[`mult.js 1`] = `
+/* @flow */
 
 function num(x:number) { }
 
@@ -251,7 +253,7 @@ num(1 * null);
 let x: number = 2 * 3;
 x *= 4;
 
-let y: string = \"123\";
+let y: string = "123";
 y *= 2; // error
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 /* @flow */
@@ -264,23 +266,23 @@ num(1 * null);
 let x: number = 2 * 3;
 x *= 4;
 
-let y: string = \"123\";
+let y: string = "123";
 y *= 2; // error
-"
+
 `;
 
-exports[`test relational.js 1`] = `
-"/* @flow */
+exports[`relational.js 1`] = `
+/* @flow */
 
 (1 < 2);
-(1 < \"foo\"); // error
-(\"foo\" < 1); // error
-(\"foo\" < \"bar\");
+(1 < "foo"); // error
+("foo" < 1); // error
+("foo" < "bar");
 (1 < {foo: 1}); // error
 ({foo: 1} < 1); // error
 ({foo: 1} < {foo: 1}); // error
-(\"foo\" < {foo: 1}); // error
-({foo: 1} < \"foo\"); // error
+("foo" < {foo: 1}); // error
+({foo: 1} < "foo"); // error
 
 var x = (null : ?number);
 (1 < x); // 2 errors: null !~> number; undefined !~> number
@@ -304,14 +306,14 @@ let tests = [
 /* @flow */
 
 1 < 2;
-1 < \"foo\"; // error
-\"foo\" < 1; // error
-\"foo\" < \"bar\";
+1 < "foo"; // error
+"foo" < 1; // error
+"foo" < "bar";
 1 < { foo: 1 }; // error
-({ foo: 1 }) < 1; // error
-({ foo: 1 }) < { foo: 1 }; // error
-\"foo\" < { foo: 1 }; // error
-({ foo: 1 }) < \"foo\"; // error
+({ foo: 1 } < 1); // error
+({ foo: 1 } < { foo: 1 }); // error
+"foo" < { foo: 1 }; // error
+({ foo: 1 } < "foo"); // error
 
 var x = (null: ?number);
 1 < x; // 2 errors: null !~> number; undefined !~> number
@@ -331,5 +333,5 @@ let tests = [
     x > z;
   }
 ];
-"
+
 `;

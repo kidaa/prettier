@@ -1,6 +1,8 @@
-exports[`test libA.js 1`] = `
-"declare function foo(x: number): void;
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`libA.js 1`] = `
+declare function foo(x: number): void;
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 declare function foo(x: number): void;
-"
+
 `;

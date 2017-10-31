@@ -1,5 +1,26 @@
-exports[`test test.js 1`] = `
-"after =
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`comments.js 1`] = `
+<div>
+  {
+    // TODO: don't harcode this space! not all locales use whitespace
+    // in the same way
+    ' '
+  }
+</div>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<div>
+  {
+    // TODO: don't harcode this space! not all locales use whitespace
+    // in the same way
+    " "
+  }
+</div>;
+
+`;
+
+exports[`test.js 1`] = `
+after =
   <span>
       foo <span>bar</span>
   </span>
@@ -50,19 +71,29 @@ nest_plz =
   </div>
 
 regression_not_transformed_1 =
-  <span> <Icon icon=\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\" /></span>;
+  <span> <Icon icon="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" /></span>;
 
 regression_not_transformed_2 =
-  <span><Icon icon=\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\" /> </span>;
+  <span><Icon icon="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" /> </span>;
 
 similar_1 =
-  <span> <Icon icon=\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\" /></span>;
+  <span> <Icon icon="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" /></span>;
 
 similar_2 =
-  <span><Icon icon=\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\" /> </span>;
+  <span><Icon icon="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" /> </span>;
 
 similar_3 =
-  <span><Icon icon=\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\" /> <Icon icon=\"\" /></span>;
+  <span><Icon icon="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" /> <Icon icon="" /></span>;
+
+not_broken_end =
+  <div>
+    long text long text long text long text long text long text long text long text <link>url</link> long text long text
+  </div>
+
+not_broken_begin =
+  <div>
+    <br /> long text long text long text long text long text long text long text long text<link>url</link> long text long text
+  </div>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 after = (
   <span>
@@ -78,8 +109,8 @@ before = (
 
 before_break1 = (
   <span>
-    <span barbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbar />
-    {\" \"}foo
+    <span barbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbar />{" "}
+    foo
   </span>
 );
 
@@ -87,14 +118,14 @@ before_break2 = (
   <span>
     <span
       barbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbar
-    />
-    {\" \"}foo
+    />{" "}
+    foo
   </span>
 );
 
 after_break = (
   <span>
-    foo{\" \"}
+    foo{" "}
     <span barbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbarbar />
   </span>
 );
@@ -109,7 +140,14 @@ break_components = (
   <div>
     <Foo />
     <Bar>
-      <p>foo<span>bar bar bar</span></p><h1><span><em>yep</em></span></h1>
+      <p>
+        foo<span>bar bar bar</span>
+      </p>
+      <h1>
+        <span>
+          <em>yep</em>
+        </span>
+      </h1>
     </Bar>
     <h2>nope</h2>
   </div>
@@ -131,34 +169,48 @@ nest_plz = (
 
 regression_not_transformed_1 = (
   <span>
-    {\" \"}<Icon icon=\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\" />
+    {" "}
+    <Icon icon="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" />
   </span>
 );
 
 regression_not_transformed_2 = (
   <span>
-    <Icon icon=\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\" />{\" \"}
+    <Icon icon="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" />{" "}
   </span>
 );
 
 similar_1 = (
   <span>
-    {\" \"}
-    <Icon icon=\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\" />
+    {" "}
+    <Icon icon="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" />
   </span>
 );
 
 similar_2 = (
   <span>
-    <Icon icon=\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\" />
-    {\" \"}
+    <Icon icon="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" />{" "}
   </span>
 );
 
 similar_3 = (
   <span>
-    <Icon icon=\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\" /> <Icon icon=\"\" />
+    <Icon icon="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" /> <Icon icon="" />
   </span>
 );
-"
+
+not_broken_end = (
+  <div>
+    long text long text long text long text long text long text long text long
+    text <link>url</link> long text long text
+  </div>
+);
+
+not_broken_begin = (
+  <div>
+    <br /> long text long text long text long text long text long text long text
+    long text<link>url</link> long text long text
+  </div>
+);
+
 `;

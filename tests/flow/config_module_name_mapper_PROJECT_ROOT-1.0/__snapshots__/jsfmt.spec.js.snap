@@ -1,16 +1,18 @@
-exports[`test main.js 1`] = `
-"// @flow
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-import {test} from \'testmodule\';
+exports[`main.js 1`] = `
+// @flow
+
+import {test} from 'testmodule';
 
 var a: number = test;
 var b: string = test; // Error: number ~> string
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // @flow
 
-import { test } from \"testmodule\";
+import { test } from "testmodule";
 
 var a: number = test;
 var b: string = test; // Error: number ~> string
-"
+
 `;

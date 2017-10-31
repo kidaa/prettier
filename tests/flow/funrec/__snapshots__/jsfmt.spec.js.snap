@@ -1,5 +1,7 @@
-exports[`test funrec.js 1`] = `
-"function bar(x) { return x; }
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`funrec.js 1`] = `
+function bar(x) { return x; }
 function foo() {
     return function bound() {
         return bar(bound);
@@ -14,5 +16,5 @@ function foo() {
     return bar(bound);
   };
 }
-"
+
 `;

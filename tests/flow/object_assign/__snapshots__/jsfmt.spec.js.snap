@@ -1,24 +1,26 @@
-exports[`test A.js 1`] = `
-"/**
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`A.js 1`] = `
+/**
  * @flow
  */
 
-var EventEmitter = require(\'events\').EventEmitter;
+var EventEmitter = require('events').EventEmitter;
 
 // This pattern seems to cause the trouble.
 var Bad = Object.assign({}, EventEmitter.prototype, {
-  foo: function(): string { return \'hi\'; }
+  foo: function(): string { return 'hi'; }
 });
 
-// Calling Bad.foo() in the same file doesn\'t error
+// Calling Bad.foo() in the same file doesn't error
 var bad: number = Bad.foo();
 
-// Doesn\'t repro if I extend the class myself
+// Doesn't repro if I extend the class myself
 class MyEventEmitter extends events$EventEmitter {}
 var Good = Object.assign({}, MyEventEmitter.prototype, {
-  foo: function(): string { return \'hi\'; }
+  foo: function(): string { return 'hi'; }
 });
-// Calling Good.foo() in the same file doesn\'t error
+// Calling Good.foo() in the same file doesn't error
 var good: number = Good.foo();
 
 module.exports = {
@@ -30,41 +32,41 @@ module.exports = {
  * @flow
  */
 
-var EventEmitter = require(\"events\").EventEmitter;
+var EventEmitter = require("events").EventEmitter;
 
 // This pattern seems to cause the trouble.
 var Bad = Object.assign({}, EventEmitter.prototype, {
   foo: function(): string {
-    return \"hi\";
+    return "hi";
   }
 });
 
-// Calling Bad.foo() in the same file doesn\'t error
+// Calling Bad.foo() in the same file doesn't error
 var bad: number = Bad.foo();
 
-// Doesn\'t repro if I extend the class myself
+// Doesn't repro if I extend the class myself
 class MyEventEmitter extends events$EventEmitter {}
 var Good = Object.assign({}, MyEventEmitter.prototype, {
   foo: function(): string {
-    return \"hi\";
+    return "hi";
   }
 });
-// Calling Good.foo() in the same file doesn\'t error
+// Calling Good.foo() in the same file doesn't error
 var good: number = Good.foo();
 
 module.exports = {
   Bad: Bad,
   Good: Good
 };
-"
+
 `;
 
-exports[`test B.js 1`] = `
-"/**
+exports[`B.js 1`] = `
+/**
  * @flow
  */
 
-var A = require(\'./A.js\');
+var A = require('./A.js');
 
 var good: number = A.Good.foo();
 
@@ -82,7 +84,7 @@ A.js|8 col 23 error|  object literal
  * @flow
  */
 
-var A = require(\"./A.js\");
+var A = require("./A.js");
 
 var good: number = A.Good.foo();
 
@@ -95,44 +97,77 @@ B.js|12 col 1 error|  call of method foo
 || Property not found in
 A.js|8 col 23 error|  object literal
 */
-"
+
 `;
 
-exports[`test apply.js 1`] = `
-"// @flow
+exports[`apply.js 1`] = `
+// @flow
 
-(Object.assign.apply(null, [{}, {a: 1}, {b: \'foo\'}]): {a: number, b: string});
-(Object.assign({}, ...[{a: 1}, {b: \'foo\'}]): {a: number, b: string});
+(Object.assign.apply(null, [{}, {a: 1}, {b: 'foo'}]): {a: number, b: string});
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // @flow
 
-(Object.assign.apply(null, [{}, { a: 1 }, { b: \"foo\" }]): {
+(Object.assign.apply(null, [{}, { a: 1 }, { b: "foo" }]): {
   a: number,
   b: string
 });
-(Object.assign({}, ...[{ a: 1 }, { b: \"foo\" }]): { a: number, b: string });
-"
+
 `;
 
-exports[`test non_objects.js 1`] = `
-"/* @flow */
+exports[`non_objects.js 1`] = `
+/* @flow */
 
-Object.assign(\"123\", {a: \"foo\"});
-Object.assign(123, {a: \"foo\"});
-Object.assign({a: \"foo\"}, 123);
+Object.assign("123", {a: "foo"});
+Object.assign(123, {a: "foo"});
+Object.assign({a: "foo"}, 123);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 /* @flow */
 
-Object.assign(\"123\", { a: \"foo\" });
-Object.assign(123, { a: \"foo\" });
-Object.assign({ a: \"foo\" }, 123);
-"
+Object.assign("123", { a: "foo" });
+Object.assign(123, { a: "foo" });
+Object.assign({ a: "foo" }, 123);
+
 `;
 
-exports[`test undefined.js 1`] = `
-"/* @flow */
+exports[`spread.js 1`] = `
+// @flow
 
-var React = require(\'react\');
+declare var arrOfObjs: Array<{ foo: string }>;
+declare var roArrOfObjs: $ReadOnlyArray<{foo: string}>;
+declare var tup: [{foo: string}, {bar: number}];
+
+(Object.assign({}, ...arrOfObjs): { foo: number}); // Error: string ~> number
+(Object.assign({}, ...roArrOfObjs): { foo: number}); // Error: string ~> number
+(Object.assign({}, ...tup): { foo: string, bar: boolean}); // Error: number ~> boolean
+
+(Object.assign(
+  {},
+  ...[{a: 1}, {b: 'foo'}],
+  ...[{c: true}],
+): {a: number, b: true, c: boolean}); // Error: 'foo' => true
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// @flow
+
+declare var arrOfObjs: Array<{ foo: string }>;
+declare var roArrOfObjs: $ReadOnlyArray<{ foo: string }>;
+declare var tup: [{ foo: string }, { bar: number }];
+
+(Object.assign({}, ...arrOfObjs): { foo: number }); // Error: string ~> number
+(Object.assign({}, ...roArrOfObjs): { foo: number }); // Error: string ~> number
+(Object.assign({}, ...tup): { foo: string, bar: boolean }); // Error: number ~> boolean
+
+(Object.assign({}, ...[{ a: 1 }, { b: "foo" }], ...[{ c: true }]): {
+  a: number,
+  b: true,
+  c: boolean
+}); // Error: 'foo' => true
+
+`;
+
+exports[`undefined.js 1`] = `
+/* @flow */
+
+var React = require('react');
 
 type DefaultProps = {
   foo: number,
@@ -153,7 +188,7 @@ class MyReactThing extends React.Component {
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 /* @flow */
 
-var React = require(\"react\");
+var React = require("react");
 
 type DefaultProps = {
   foo: number
@@ -171,7 +206,7 @@ class MyReactThing extends React.Component {
   }
 }
 
-<MyReactThing />; /* works*/
+<MyReactThing />; // works
 <MyReactThing foo={undefined} />; // also works
-"
+
 `;

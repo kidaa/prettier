@@ -1,5 +1,7 @@
-exports[`test bug.js 1`] = `
-"const foo = {
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`bug.js 1`] = `
+const foo = {
   bar: props.bar ? props.bar : noop,
   baz: props.baz
 }
@@ -10,5 +12,5 @@ const foo = {
     : noop,
   baz: props.baz
 };
-"
+
 `;

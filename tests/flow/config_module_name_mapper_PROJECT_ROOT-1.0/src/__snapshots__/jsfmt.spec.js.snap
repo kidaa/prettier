@@ -1,10 +1,12 @@
-exports[`test testmodule.js 1`] = `
-"// @flow
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`testmodule.js 1`] = `
+// @flow
 
 export let test = 42;
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // @flow
 
 export let test = 42;
-"
+
 `;

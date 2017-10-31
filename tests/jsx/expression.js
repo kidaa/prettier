@@ -57,4 +57,27 @@
     this.props.veryBigItemImageViewFunc(option)}
   heading={this.props.displayTextFunc(option)}
   value={option}
-/>
+/>;
+
+<ParentComponent prop={
+  <Child>
+    test
+  </Child>
+}/>;
+
+<BookingIntroPanel
+  prop="long_string_make_to_force_break"
+  logClick={data => doLogClick("short", "short", data)}
+/>;
+
+<BookingIntroPanel
+  logClick={data =>
+    doLogClick("long_name_long_name_long_name", "long_name_long_name_long_name", data)
+  }
+/>;
+
+<BookingIntroPanel
+  logClick={data => {
+    doLogClick("long_name_long_name_long_name", "long_name_long_name_long_name", data)
+  }}
+/>;

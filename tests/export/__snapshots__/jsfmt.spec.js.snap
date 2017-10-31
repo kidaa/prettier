@@ -1,5 +1,7 @@
-exports[`test bracket.js 1`] = `
-"export {
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`bracket.js 1`] = `
+export {
   runTaskForChanged,
   description,
   someOtherLabel,
@@ -22,11 +24,11 @@ export {
   soWeCanGetItTo80Columns
 };
 export { fitsIn, oneLine };
-"
+
 `;
 
-exports[`test bracket.js 2`] = `
-"export {
+exports[`bracket.js 2`] = `
+export {
   runTaskForChanged,
   description,
   someOtherLabel,
@@ -49,23 +51,23 @@ export {
   soWeCanGetItTo80Columns
 };
 export {fitsIn, oneLine};
-"
+
 `;
 
-exports[`test empty.js 1`] = `
-"export {};
-export {} from \".\";
+exports[`empty.js 1`] = `
+export {};
+export {} from ".";
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 export {};
-export {} from \".\";
-"
+export {} from ".";
+
 `;
 
-exports[`test empty.js 2`] = `
-"export {};
-export {} from \".\";
+exports[`empty.js 2`] = `
+export {};
+export {} from ".";
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 export {};
-export {} from \".\";
-"
+export {} from ".";
+
 `;

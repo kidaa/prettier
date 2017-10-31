@@ -1,10 +1,12 @@
-exports[`test A3.js 1`] = `
-"// @flow
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-require(\'B\');
+exports[`A3.js 1`] = `
+// @flow
+
+require('B');
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // @flow
 
-require(\"B\");
-"
+require("B");
+
 `;

@@ -1,5 +1,7 @@
-exports[`test customfun.js 1`] = `
-"// @flow
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`customfun.js 1`] = `
+// @flow
 
 declare var idx: $Facebookism$Idx;
 declare var merge: $Facebookism$Merge;
@@ -22,14 +24,14 @@ declare var objectGetPrototypeOf: Object$GetPrototypeOf;
 declare var objectAssign: Object$Assign;
 
 m;
-"
+
 `;
 
-exports[`test unknown.js 1`] = `
-"// @noflow
-module.exports = { x: { y: \"\" } };
+exports[`unknown.js 1`] = `
+// @noflow
+module.exports = { x: { y: "" } };
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // @noflow
-module.exports = { x: { y: \"\" } };
-"
+module.exports = { x: { y: "" } };
+
 `;

@@ -1,20 +1,22 @@
-exports[`test fail-0.js 1`] = `
-"// @flow
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-// Error: \'declare\', \'checks\' but missing predicate
+exports[`fail-0.js 1`] = `
+// @flow
+
+// Error: 'declare', 'checks' but missing predicate
 
 declare function f2(x: mixed): boolean %checks;
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // @flow
 
-// Error: \'declare\', \'checks\' but missing predicate
+// Error: 'declare', 'checks' but missing predicate
 
 declare function f2(x: mixed): boolean %checks;
-"
+
 `;
 
-exports[`test fail-1.js 1`] = `
-"// @flow
+exports[`fail-1.js 1`] = `
+// @flow
 
 // Error: no return statement
 
@@ -25,11 +27,11 @@ function f6(x: mixed): %checks (x !== null) {  }
 // Error: no return statement
 
 function f6(x: mixed): %checks(x !== null) {}
-"
+
 `;
 
-exports[`test fail-2.js 1`] = `
-"// @flow
+exports[`fail-2.js 1`] = `
+// @flow
 
 var a2 = (x: mixed): %checks (x !== null) => {        // Error: body form
   var x = 1; return x;
@@ -42,11 +44,11 @@ var a2 = (x: mixed): %checks(x !== null) => {
   var x = 1;
   return x;
 };
-"
+
 `;
 
-exports[`test fail-3.js 1`] = `
-"// @flow
+exports[`fail-3.js 1`] = `
+// @flow
 
 // Cannot declare predicate with a function body is present.
 
@@ -63,11 +65,11 @@ function f5(x: mixed): %checks(x !== null) {
 }
 
 var a2 = (x: mixed): %checks(x !== null) => x !== null;
-"
+
 `;
 
-exports[`test pass.js 1`] = `
-"// @flow
+exports[`pass.js 1`] = `
+// @flow
 
 declare function f1(x: mixed): boolean;
 
@@ -111,18 +113,18 @@ var a0 = (x: mixed) => x !== null;
 
 var a1 = (x: mixed): %checks => x !== null;
 
-((x): %checks => x !== null);
+(x): %checks => x !== null;
 
 const insert_a_really_big_predicated_arrow_function_name_here = (x): %checks =>
   x !== null;
 
 declare var x;
 x;
-(checks => 123);
+checks => 123;
 
 type checks = any;
 
 declare function f(x: mixed): checks;
 typeof x === null;
-"
+
 `;
