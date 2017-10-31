@@ -2,7 +2,7 @@
 
 const React = require("react");
 
-const GithubButton = props =>
+const GithubButton = props => (
   <a
     className="github-button"
     href={props.config.githubUrl}
@@ -13,7 +13,8 @@ const GithubButton = props =>
     aria-label="Star this project on GitHub"
   >
     Star
-  </a>;
+  </a>
+);
 
 GithubButton.propTypes = {
   config: React.PropTypes.object
@@ -44,7 +45,11 @@ class Footer extends React.Component {
           </div>
           <div>
             <h5>Community</h5>
-            <a href={this.url("/users/")}>User Showcase</a>
+            <a
+              href={this.props.config.baseUrl + this.props.language + "/users/"}
+            >
+              User Showcase
+            </a>
             <a
               href="http://stackoverflow.com/questions/tagged/prettier"
               target="_blank"

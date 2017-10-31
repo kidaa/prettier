@@ -3,51 +3,76 @@
 const cosmiconfig = require("cosmiconfig");
 const minimatch = require("minimatch");
 const path = require("path");
+const mem = require("mem");
 
-const withCache = cosmiconfig("prettier");
-const noCache = cosmiconfig("prettier", { cache: false });
+const getExplorerMemoized = mem(opts =>
+  cosmiconfig("prettier", {
+    sync: opts.sync,
+    cache: opts.cache,
+    rcExtensions: true,
+    transform: result => {
+      if (result && result.config) {
+        delete result.config.$schema;
+      }
+      return result;
+    }
+  })
+);
+
+/** @param {{ cache: boolean, sync: boolean }} opts */
+function getLoadFunction(opts) {
+  // Normalize opts before passing to a memoized function
+  opts = Object.assign({ sync: false, cache: false }, opts);
+  return getExplorerMemoized(opts).load;
+}
 
 function resolveConfig(filePath, opts) {
-  if (opts && opts.configFile === false) {
-    // do not look for a config file
-    return Promise.resolve(null);
-  }
-
-  const useCache = !(opts && opts.useCache === false);
-  const fileDir = filePath ? path.dirname(filePath) : undefined;
-
-  return (
-    (useCache ? withCache : noCache)
-      // https://github.com/davidtheclark/cosmiconfig/pull/68
-      .load(fileDir, opts && opts.configFile)
-      .then(result => {
-        if (!result) {
-          return null;
-        }
-
-        return mergeOverrides(result.config, filePath);
-      })
-  );
-}
-
-function clearCache() {
-  withCache.clearCaches();
-}
-
-function resolveConfigFile(filePath) {
-  return noCache.load(filePath).then(result => {
-    if (result) {
-      return result.filepath;
-    }
-    return null;
+  opts = Object.assign({ useCache: true }, opts);
+  const load = getLoadFunction({ cache: !!opts.useCache, sync: false });
+  return load(filePath, opts.config).then(result => {
+    return !result ? null : mergeOverrides(result, filePath);
   });
 }
 
-function mergeOverrides(config, filePath) {
-  const options = Object.assign({}, config);
+resolveConfig.sync = (filePath, opts) => {
+  opts = Object.assign({ useCache: true }, opts);
+  const load = getLoadFunction({ cache: !!opts.useCache, sync: true });
+  const result = load(filePath, opts.config);
+  return !result ? null : mergeOverrides(result, filePath);
+};
+
+function clearCache() {
+  mem.clear(getExplorerMemoized);
+}
+
+function resolveConfigFile(filePath) {
+  const load = getLoadFunction({ sync: false });
+  return load(filePath).then(result => {
+    return result ? result.filepath : null;
+  });
+}
+
+resolveConfigFile.sync = filePath => {
+  const load = getLoadFunction({ sync: true });
+  const result = load(filePath);
+  return result ? result.filepath : null;
+};
+
+function mergeOverrides(configResult, filePath) {
+  const options = Object.assign({}, configResult.config);
   if (filePath && options.overrides) {
+    const relativeFilePath = path.relative(
+      path.dirname(configResult.filepath),
+      filePath
+    );
     for (const override of options.overrides) {
-      if (pathMatchesGlobs(filePath, override.files, override.excludeFiles)) {
+      if (
+        pathMatchesGlobs(
+          relativeFilePath,
+          override.files,
+          override.excludeFiles
+        )
+      ) {
         Object.assign(options, override.options);
       }
     }

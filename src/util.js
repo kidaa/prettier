@@ -1,9 +1,16 @@
 "use strict";
 
+const stringWidth = require("string-width");
+const emojiRegex = require("emoji-regex")();
+const escapeStringRegexp = require("escape-string-regexp");
+
+const getCjkRegex = require("cjk-regex");
+const cjkRegex = getCjkRegex();
+const cjkPunctuationRegex = getCjkRegex.punctuations();
+
 function isExportDeclaration(node) {
   if (node) {
     switch (node.type) {
-      case "ExportDeclaration":
       case "ExportDefaultDeclaration":
       case "ExportDefaultSpecifier":
       case "DeclareExportDeclaration":
@@ -171,9 +178,9 @@ function isPreviousLineEmpty(text, node) {
   return idx !== idx2;
 }
 
-function isNextLineEmpty(text, node) {
+function isNextLineEmptyAfterIndex(text, index) {
   let oldIdx = null;
-  let idx = locEnd(node);
+  let idx = index;
   while (idx !== oldIdx) {
     // We need to skip all the potential trailing inline comments
     oldIdx = idx;
@@ -186,7 +193,11 @@ function isNextLineEmpty(text, node) {
   return hasNewline(text, idx);
 }
 
-function getNextNonSpaceNonCommentCharacter(text, node) {
+function isNextLineEmpty(text, node) {
+  return isNextLineEmptyAfterIndex(text, locEnd(node));
+}
+
+function getNextNonSpaceNonCommentCharacterIndex(text, node) {
   let oldIdx = null;
   let idx = locEnd(node);
   while (idx !== oldIdx) {
@@ -196,7 +207,11 @@ function getNextNonSpaceNonCommentCharacter(text, node) {
     idx = skipTrailingComment(text, idx);
     idx = skipNewline(text, idx);
   }
-  return text.charAt(idx);
+  return idx;
+}
+
+function getNextNonSpaceNonCommentCharacter(text, node) {
+  return text.charAt(getNextNonSpaceNonCommentCharacterIndex(text, node));
 }
 
 function hasSpaces(text, index, opts) {
@@ -294,7 +309,8 @@ function setLocEnd(node, index) {
 
 const PRECEDENCE = {};
 [
-  ["||"],
+  ["|>"],
+  ["||", "??"],
   ["&&"],
   ["|"],
   ["^"],
@@ -326,13 +342,10 @@ const multiplicativeOperators = {
   "/": true,
   "%": true
 };
-const bitwiseOperators = {
+const bitshiftOperators = {
   ">>": true,
   ">>>": true,
-  "<<": true,
-  "|": true,
-  "^": true,
-  "&": true
+  "<<": true
 };
 
 function shouldFlatten(parentOp, nodeOp) {
@@ -360,12 +373,7 @@ function shouldFlatten(parentOp, nodeOp) {
   }
 
   // x << y << z --> (x << y) << z
-  if (
-    bitwiseOperators[parentOp] &&
-    bitwiseOperators[nodeOp] &&
-    // Flatten x | y | z
-    (nodeOp !== "|" || parentOp !== "|")
-  ) {
+  if (bitshiftOperators[parentOp] && bitshiftOperators[nodeOp]) {
     return false;
   }
 
@@ -373,7 +381,12 @@ function shouldFlatten(parentOp, nodeOp) {
 }
 
 function isBitwiseOperator(operator) {
-  return !!bitwiseOperators[operator];
+  return (
+    !!bitshiftOperators[operator] ||
+    operator === "|" ||
+    operator === "^" ||
+    operator === "&"
+  );
 }
 
 // Tests if an expression starts with `{`, or (if forbidFunctionAndClass holds) `function` or `class`.
@@ -445,6 +458,21 @@ function isBlockComment(comment) {
   return comment.type === "Block" || comment.type === "CommentBlock";
 }
 
+function hasClosureCompilerTypeCastComment(text, node) {
+  // https://github.com/google/closure-compiler/wiki/Annotating-Types#type-casts
+  // Syntax example: var x = /** @type {string} */ (fruit);
+  return (
+    node.comments &&
+    node.comments.some(
+      comment =>
+        comment.leading &&
+        isBlockComment(comment) &&
+        comment.value.match(/^\*\s*@type\s*{[^}]+}\s*$/) &&
+        getNextNonSpaceNonCommentCharacter(text, comment) === "("
+    )
+  );
+}
+
 function getAlignmentSize(value, tabWidth, startIndex) {
   startIndex = startIndex || 0;
 
@@ -464,7 +492,269 @@ function getAlignmentSize(value, tabWidth, startIndex) {
   return size;
 }
 
+function getIndentSize(value, tabWidth) {
+  const lastNewlineIndex = value.lastIndexOf("\n");
+  if (lastNewlineIndex === -1) {
+    return 0;
+  }
+
+  return getAlignmentSize(
+    // All the leading whitespaces
+    value.slice(lastNewlineIndex + 1).match(/^[ \t]*/)[0],
+    tabWidth
+  );
+}
+
+function printString(raw, options, isDirectiveLiteral) {
+  // `rawContent` is the string exactly like it appeared in the input source
+  // code, without its enclosing quotes.
+  const rawContent = raw.slice(1, -1);
+
+  const double = { quote: '"', regex: /"/g };
+  const single = { quote: "'", regex: /'/g };
+
+  const preferred = options.singleQuote ? single : double;
+  const alternate = preferred === single ? double : single;
+
+  let shouldUseAlternateQuote = false;
+  let canChangeDirectiveQuotes = false;
+
+  // If `rawContent` contains at least one of the quote preferred for enclosing
+  // the string, we might want to enclose with the alternate quote instead, to
+  // minimize the number of escaped quotes.
+  // Also check for the alternate quote, to determine if we're allowed to swap
+  // the quotes on a DirectiveLiteral.
+  if (
+    rawContent.includes(preferred.quote) ||
+    rawContent.includes(alternate.quote)
+  ) {
+    const numPreferredQuotes = (rawContent.match(preferred.regex) || []).length;
+    const numAlternateQuotes = (rawContent.match(alternate.regex) || []).length;
+
+    shouldUseAlternateQuote = numPreferredQuotes > numAlternateQuotes;
+  } else {
+    canChangeDirectiveQuotes = true;
+  }
+
+  const enclosingQuote =
+    options.parser === "json"
+      ? double.quote
+      : shouldUseAlternateQuote ? alternate.quote : preferred.quote;
+
+  // Directives are exact code unit sequences, which means that you can't
+  // change the escape sequences they use.
+  // See https://github.com/prettier/prettier/issues/1555
+  // and https://tc39.github.io/ecma262/#directive-prologue
+  if (isDirectiveLiteral) {
+    if (canChangeDirectiveQuotes) {
+      return enclosingQuote + rawContent + enclosingQuote;
+    }
+    return raw;
+  }
+
+  // It might sound unnecessary to use `makeString` even if the string already
+  // is enclosed with `enclosingQuote`, but it isn't. The string could contain
+  // unnecessary escapes (such as in `"\'"`). Always using `makeString` makes
+  // sure that we consistently output the minimum amount of escaped quotes.
+  return makeString(
+    rawContent,
+    enclosingQuote,
+    !(
+      options.parser === "css" ||
+      options.parser === "less" ||
+      options.parser === "scss"
+    )
+  );
+}
+
+function makeString(rawContent, enclosingQuote, unescapeUnnecessaryEscapes) {
+  const otherQuote = enclosingQuote === '"' ? "'" : '"';
+
+  // Matches _any_ escape and unescaped quotes (both single and double).
+  const regex = /\\([\s\S])|(['"])/g;
+
+  // Escape and unescape single and double quotes as needed to be able to
+  // enclose `rawContent` with `enclosingQuote`.
+  const newContent = rawContent.replace(regex, (match, escaped, quote) => {
+    // If we matched an escape, and the escaped character is a quote of the
+    // other type than we intend to enclose the string with, there's no need for
+    // it to be escaped, so return it _without_ the backslash.
+    if (escaped === otherQuote) {
+      return escaped;
+    }
+
+    // If we matched an unescaped quote and it is of the _same_ type as we
+    // intend to enclose the string with, it must be escaped, so return it with
+    // a backslash.
+    if (quote === enclosingQuote) {
+      return "\\" + quote;
+    }
+
+    if (quote) {
+      return quote;
+    }
+
+    // Unescape any unnecessarily escaped character.
+    // Adapted from https://github.com/eslint/eslint/blob/de0b4ad7bd820ade41b1f606008bea68683dc11a/lib/rules/no-useless-escape.js#L27
+    return unescapeUnnecessaryEscapes &&
+      /^[^\\nrvtbfux\r\n\u2028\u2029"'0-7]$/.test(escaped)
+      ? escaped
+      : "\\" + escaped;
+  });
+
+  return enclosingQuote + newContent + enclosingQuote;
+}
+
+function printNumber(rawNumber) {
+  return (
+    rawNumber
+      .toLowerCase()
+      // Remove unnecessary plus and zeroes from scientific notation.
+      .replace(/^([+-]?[\d.]+e)(?:\+|(-))?0*(\d)/, "$1$2$3")
+      // Remove unnecessary scientific notation (1e0).
+      .replace(/^([+-]?[\d.]+)e[+-]?0+$/, "$1")
+      // Make sure numbers always start with a digit.
+      .replace(/^([+-])?\./, "$10.")
+      // Remove extraneous trailing decimal zeroes.
+      .replace(/(\.\d+?)0+(?=e|$)/, "$1")
+      // Remove trailing dot.
+      .replace(/\.(?=e|$)/, "")
+  );
+}
+
+function getMaxContinuousCount(str, target) {
+  const results = str.match(
+    new RegExp(`(${escapeStringRegexp(target)})+`, "g")
+  );
+
+  if (results === null) {
+    return 0;
+  }
+
+  return results.reduce(
+    (maxCount, result) => Math.max(maxCount, result.length / target.length),
+    0
+  );
+}
+
+function mapDoc(doc, callback) {
+  if (doc.parts) {
+    const parts = doc.parts.map(part => mapDoc(part, callback));
+    return callback(Object.assign({}, doc, { parts }));
+  }
+
+  if (doc.contents) {
+    const contents = mapDoc(doc.contents, callback);
+    return callback(Object.assign({}, doc, { contents }));
+  }
+
+  return callback(doc);
+}
+
+/**
+ * split text into whitespaces and words
+ * @param {string} text
+ * @return {Array<{ type: "whitespace", value: " " | "" } | { type: "word", value: string }>}
+ */
+function splitText(text) {
+  const KIND_NON_CJK = "non-cjk";
+  const KIND_CJK_CHARACTER = "cjk-character";
+  const KIND_CJK_PUNCTUATION = "cjk-punctuation";
+
+  const nodes = [];
+
+  text
+    .replace(
+      new RegExp(`(${cjkRegex.source})\n(${cjkRegex.source})`, "g"),
+      "$1$2"
+    )
+    // `\s` but exclude full-width whitspace (`\u3000`)
+    .split(/([^\S\u3000]+)/)
+    .forEach((token, index, tokens) => {
+      // whitespace
+      if (index % 2 === 1) {
+        nodes.push({ type: "whitespace", value: " " });
+        return;
+      }
+
+      // word separated by whitespace
+
+      if ((index === 0 || index === tokens.length - 1) && token === "") {
+        return;
+      }
+
+      token
+        .split(new RegExp(`(${cjkRegex.source})`))
+        .forEach((innerToken, innerIndex, innerTokens) => {
+          if (
+            (innerIndex === 0 || innerIndex === innerTokens.length - 1) &&
+            innerToken === ""
+          ) {
+            return;
+          }
+
+          // non-CJK word
+          if (innerIndex % 2 === 0) {
+            if (innerToken !== "") {
+              appendNode({
+                type: "word",
+                value: innerToken,
+                kind: KIND_NON_CJK
+              });
+            }
+            return;
+          }
+
+          // CJK character
+          const kind = cjkPunctuationRegex.test(innerToken)
+            ? KIND_CJK_PUNCTUATION
+            : KIND_CJK_CHARACTER;
+          appendNode({ type: "word", value: innerToken, kind });
+        });
+    });
+
+  return nodes;
+
+  function appendNode(node) {
+    const lastNode = nodes[nodes.length - 1];
+    if (lastNode && lastNode.type === "word") {
+      if (isBetween(KIND_NON_CJK, KIND_CJK_CHARACTER)) {
+        nodes.push({ type: "whitespace", value: " " });
+      } else if (
+        !isBetween(KIND_NON_CJK, KIND_CJK_PUNCTUATION) &&
+        // disallow leading/trailing full-width whitespace
+        ![lastNode.value, node.value].some(value => /\u3000/.test(value))
+      ) {
+        nodes.push({ type: "whitespace", value: "" });
+      }
+    }
+    nodes.push(node);
+
+    function isBetween(kind1, kind2) {
+      return (
+        (lastNode.kind === kind1 && node.kind === kind2) ||
+        (lastNode.kind === kind2 && node.kind === kind1)
+      );
+    }
+  }
+}
+
+function getStringWidth(text) {
+  if (!text) {
+    return 0;
+  }
+
+  // emojis are considered 2-char width for consistency
+  // see https://github.com/sindresorhus/string-width/issues/11
+  // for the reason why not implemented in `string-width`
+  return stringWidth(text.replace(emojiRegex, "  "));
+}
+
 module.exports = {
+  getStringWidth,
+  splitText,
+  mapDoc,
+  getMaxContinuousCount,
   getPrecedence,
   shouldFlatten,
   isBitwiseOperator,
@@ -472,10 +762,12 @@ module.exports = {
   getParentExportDeclaration,
   getPenultimate,
   getLast,
+  getNextNonSpaceNonCommentCharacterIndex,
   getNextNonSpaceNonCommentCharacter,
   skipWhitespace,
   skipSpaces,
   skipNewline,
+  isNextLineEmptyAfterIndex,
   isNextLineEmpty,
   isPreviousLineEmpty,
   hasNewline,
@@ -488,5 +780,9 @@ module.exports = {
   startsWithNoLookaheadToken,
   hasBlockComments,
   isBlockComment,
-  getAlignmentSize
+  hasClosureCompilerTypeCastComment,
+  getAlignmentSize,
+  getIndentSize,
+  printString,
+  printNumber
 };

@@ -19,6 +19,7 @@ FastPath.prototype.getName = function getName() {
   }
   // Since the name is always a string, null is a safe sentinel value to
   // return if we do not know the name of the (root) value.
+  /* istanbul ignore next */
   return null;
 };
 
@@ -149,6 +150,12 @@ FastPath.prototype.needsParens = function(options) {
   // Only statements don't need parentheses.
   if (isStatement(node)) {
     return false;
+  }
+
+  // Closure compiler requires that type casted expressions to be surrounded by
+  // parentheses.
+  if (util.hasClosureCompilerTypeCastComment(options.originalText, node)) {
+    return true;
   }
 
   // Identifiers never need parentheses.
@@ -284,6 +291,9 @@ FastPath.prototype.needsParens = function(options) {
     case "TSAsExpression":
     case "LogicalExpression":
       switch (parent.type) {
+        case "ConditionalExpression":
+          return node.type === "TSAsExpression";
+
         case "CallExpression":
         case "NewExpression":
           return name === "callee" && parent.callee === node;
@@ -295,6 +305,8 @@ FastPath.prototype.needsParens = function(options) {
         case "UnaryExpression":
         case "SpreadElement":
         case "SpreadProperty":
+        case "ExperimentalSpreadProperty":
+        case "BindExpression":
         case "AwaitExpression":
         case "TSAsExpression":
         case "TSNonNullExpression":
@@ -302,6 +314,13 @@ FastPath.prototype.needsParens = function(options) {
 
         case "MemberExpression":
           return name === "object" && parent.object === node;
+
+        case "AssignmentExpression":
+          return (
+            parent.left === node &&
+            (node.type === "TSTypeAssertionExpression" ||
+              node.type === "TSAsExpression")
+          );
 
         case "BinaryExpression":
         case "LogicalExpression": {
@@ -318,7 +337,7 @@ FastPath.prototype.needsParens = function(options) {
             return true;
           }
 
-          if (po === "||" && no === "&&") {
+          if ((po === "||" || po === "??") && no === "&&") {
             return true;
           }
 
@@ -345,13 +364,16 @@ FastPath.prototype.needsParens = function(options) {
       }
 
     case "TSParenthesizedType": {
+      const grandParent = this.getParentNode(1);
       if (
         (parent.type === "TypeParameter" ||
           parent.type === "VariableDeclarator" ||
           parent.type === "TypeAnnotation" ||
-          parent.type === "GenericTypeAnnotation") &&
+          parent.type === "GenericTypeAnnotation" ||
+          parent.type === "TSTypeReference") &&
         (node.typeAnnotation.type === "TypeAnnotation" &&
-          node.typeAnnotation.typeAnnotation.type !== "TSFunctionType")
+          node.typeAnnotation.typeAnnotation.type !== "TSFunctionType" &&
+          grandParent.type !== "TSTypeOperator")
       ) {
         return false;
       }
@@ -441,7 +463,8 @@ FastPath.prototype.needsParens = function(options) {
     case "FunctionTypeAnnotation":
       return (
         parent.type === "UnionTypeAnnotation" ||
-        parent.type === "IntersectionTypeAnnotation"
+        parent.type === "IntersectionTypeAnnotation" ||
+        parent.type === "ArrayTypeAnnotation"
       );
 
     case "StringLiteral":
@@ -594,6 +617,7 @@ function isStatement(node) {
     node.type === "ClassDeclaration" ||
     node.type === "ClassMethod" ||
     node.type === "ClassProperty" ||
+    node.type === "ClassPrivateProperty" ||
     node.type === "ContinueStatement" ||
     node.type === "DebuggerStatement" ||
     node.type === "DeclareClass" ||
