@@ -2,8 +2,8 @@
 
 const runPrettier = require("../runPrettier");
 
-test("preserves shebang", () => {
-  const result = runPrettier("cli/with-shebang", ["issue1890.js"]);
-
-  expect(result.stdout).toMatchSnapshot();
+describe("preserves shebang", () => {
+  runPrettier("cli/with-shebang", ["issue1890.js"]).test({
+    status: 0
+  });
 });

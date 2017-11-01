@@ -19,6 +19,7 @@ FastPath.prototype.getName = function getName() {
   }
   // Since the name is always a string, null is a safe sentinel value to
   // return if we do not know the name of the (root) value.
+  /* istanbul ignore next */
   return null;
 };
 
@@ -151,6 +152,12 @@ FastPath.prototype.needsParens = function(options) {
     return false;
   }
 
+  // Closure compiler requires that type casted expressions to be surrounded by
+  // parentheses.
+  if (util.hasClosureCompilerTypeCastComment(options.originalText, node)) {
+    return true;
+  }
+
   // Identifiers never need parentheses.
   if (node.type === "Identifier") {
     return false;
@@ -185,7 +192,8 @@ FastPath.prototype.needsParens = function(options) {
 
   if (
     (parent.type === "ArrowFunctionExpression" &&
-      parent.body === node &&
+    parent.body === node &&
+    node.type !== "SequenceExpression" && // these have parens added anyway
       startsWithNoLookaheadToken(node, /* forbidFunctionAndClass */ false)) ||
     (parent.type === "ExpressionStatement" &&
       startsWithNoLookaheadToken(node, /* forbidFunctionAndClass */ true))
@@ -283,6 +291,9 @@ FastPath.prototype.needsParens = function(options) {
     case "TSAsExpression":
     case "LogicalExpression":
       switch (parent.type) {
+        case "ConditionalExpression":
+          return node.type === "TSAsExpression";
+
         case "CallExpression":
         case "NewExpression":
           return name === "callee" && parent.callee === node;
@@ -294,6 +305,8 @@ FastPath.prototype.needsParens = function(options) {
         case "UnaryExpression":
         case "SpreadElement":
         case "SpreadProperty":
+        case "ExperimentalSpreadProperty":
+        case "BindExpression":
         case "AwaitExpression":
         case "TSAsExpression":
         case "TSNonNullExpression":
@@ -302,9 +315,16 @@ FastPath.prototype.needsParens = function(options) {
         case "MemberExpression":
           return name === "object" && parent.object === node;
 
+        case "AssignmentExpression":
+          return (
+            parent.left === node &&
+            (node.type === "TSTypeAssertionExpression" ||
+              node.type === "TSAsExpression")
+          );
+
         case "BinaryExpression":
         case "LogicalExpression": {
-          if (!node.operator) {
+          if (!node.operator && node.type !== "TSTypeAssertionExpression") {
             return true;
           }
 
@@ -313,16 +333,12 @@ FastPath.prototype.needsParens = function(options) {
           const no = node.operator;
           const np = util.getPrecedence(no);
 
-          if (po === "||" && no === "&&") {
-            return true;
-          }
-
           if (pp > np) {
             return true;
           }
 
-          if (no === "**" && po === "**") {
-            return name === "left";
+          if ((po === "||" || po === "??") && no === "&&") {
+            return true;
           }
 
           if (pp === np && name === "right") {
@@ -330,9 +346,13 @@ FastPath.prototype.needsParens = function(options) {
             return true;
           }
 
+          if (pp === np && !util.shouldFlatten(po, no)) {
+            return true;
+          }
+
           // Add parenthesis when working with binary operators
           // It's not stricly needed but helps with code understanding
-          if (["|", "^", "&", ">>", "<<", ">>>"].indexOf(po) !== -1) {
+          if (util.isBitwiseOperator(po)) {
             return true;
           }
 
@@ -344,12 +364,16 @@ FastPath.prototype.needsParens = function(options) {
       }
 
     case "TSParenthesizedType": {
+      const grandParent = this.getParentNode(1);
       if (
-        (parent.type === "VariableDeclarator" ||
+        (parent.type === "TypeParameter" ||
+          parent.type === "VariableDeclarator" ||
           parent.type === "TypeAnnotation" ||
-          parent.type === "GenericTypeAnnotation") &&
+          parent.type === "GenericTypeAnnotation" ||
+          parent.type === "TSTypeReference") &&
         (node.typeAnnotation.type === "TypeAnnotation" &&
-          node.typeAnnotation.typeAnnotation.type !== "TSFunctionType")
+          node.typeAnnotation.typeAnnotation.type !== "TSFunctionType" &&
+          grandParent.type !== "TSTypeOperator")
       ) {
         return false;
       }
@@ -375,6 +399,11 @@ FastPath.prototype.needsParens = function(options) {
         case "ExpressionStatement":
           return name !== "expression";
 
+        case "ArrowFunctionExpression":
+          // We do need parentheses, but SequenceExpressions are handled
+          // specially when printing bodies of arrow functions.
+          return name !== "body";
+
         default:
           // Otherwise err on the side of overparenthesization, adding
           // explicit exceptions above if this proves overzealous.
@@ -385,7 +414,8 @@ FastPath.prototype.needsParens = function(options) {
       if (
         parent.type === "UnaryExpression" ||
         parent.type === "AwaitExpression" ||
-        parent.type === "TSAsExpression"
+        parent.type === "TSAsExpression" ||
+        parent.type === "TSNonNullExpression"
       ) {
         return true;
       }
@@ -398,6 +428,7 @@ FastPath.prototype.needsParens = function(options) {
         case "SpreadElement":
         case "SpreadProperty":
         case "TSAsExpression":
+        case "TSNonNullExpression":
           return true;
 
         case "MemberExpression":
@@ -432,7 +463,8 @@ FastPath.prototype.needsParens = function(options) {
     case "FunctionTypeAnnotation":
       return (
         parent.type === "UnionTypeAnnotation" ||
-        parent.type === "IntersectionTypeAnnotation"
+        parent.type === "IntersectionTypeAnnotation" ||
+        parent.type === "ArrayTypeAnnotation"
       );
 
     case "StringLiteral":
@@ -585,6 +617,7 @@ function isStatement(node) {
     node.type === "ClassDeclaration" ||
     node.type === "ClassMethod" ||
     node.type === "ClassProperty" ||
+    node.type === "ClassPrivateProperty" ||
     node.type === "ContinueStatement" ||
     node.type === "DebuggerStatement" ||
     node.type === "DeclareClass" ||

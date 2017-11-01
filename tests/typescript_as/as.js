@@ -18,3 +18,9 @@ const state = JSON.stringify({
   next: window.location.href,
   nonce,
 } as State);
+
+(foo.bar as Baz) = [bar];
+
+(bValue as boolean) ? 0 : -1;
+<boolean>bValue ? 0 : -1;
+
