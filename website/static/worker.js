@@ -17,6 +17,9 @@ os.homedir = function() {
 self.process = { argv: [], env: { PRETTIER_DEBUG: true }, version: "v8.5.0" };
 self.assert = { ok: function() {}, strictEqual: function() {} };
 self.require = function require(path) {
+  if (path === "stream") {
+    return { PassThrough() {} };
+  }
   return self[path.replace(/.+-/, "")];
 };
 
@@ -98,11 +101,16 @@ function formatCode(text, options) {
 }
 
 function lazyLoadParser(parser) {
-  var script =
-    parser === "json" ? "parser-babylon.js" : "parser-" + parser + ".js";
+  var actualParser =
+    parser === "json"
+      ? "babylon"
+      : parser === "css" || parser === "less" || parser === "scss"
+        ? "postcss"
+        : parser;
+  var script = "parser-" + actualParser + ".js";
 
-  if (!parsersLoaded[parser]) {
+  if (!parsersLoaded[actualParser]) {
     importScripts("lib/" + script);
-    parsersLoaded[parser] = true;
+    parsersLoaded[actualParser] = true;
   }
 }

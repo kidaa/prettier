@@ -6,9 +6,17 @@ const prettier = eval("require")("../index");
 const constant = require("./cli-constant");
 const util = require("./cli-util");
 const validator = require("./cli-validator");
+const logger = require("./cli-logger");
 
 function run(args) {
-  const argv = util.normalizeArgv(minimist(args, constant.minimistOptions));
+  const rawArgv = minimist(args, constant.minimistOptions);
+
+  process.env[logger.ENV_LOG_LEVEL] =
+    rawArgv["loglevel"] || constant.detailedOptionMap["loglevel"].default;
+
+  const argv = util.normalizeConfig("cli", rawArgv);
+
+  logger.debug(`normalized argv: ${JSON.stringify(argv)}`);
 
   argv.__args = args;
   argv.__filePatterns = argv["_"];
@@ -20,8 +28,12 @@ function run(args) {
     process.exit(0);
   }
 
-  if (argv["help"]) {
-    console.log(util.createUsage());
+  if (argv["help"] !== undefined) {
+    console.log(
+      typeof argv["help"] === "string" && argv["help"] !== ""
+        ? util.createDetailedUsage(argv["help"])
+        : util.createUsage()
+    );
     process.exit(0);
   }
 

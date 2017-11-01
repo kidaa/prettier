@@ -15,7 +15,8 @@ const parsers = [
   "typescript",
   "graphql",
   "postcss",
-  "parse5"
+  "parse5",
+  "markdown"
 ];
 
 process.env.PATH += path.delimiter + path.join(rootDir, "node_modules", ".bin");
@@ -123,6 +124,10 @@ shell.cp("node_modules/sw-toolbox/sw-toolbox.js", `${docs}/sw-toolbox.js`);
 shell.echo("Copy package.json");
 const pkgWithoutDependencies = Object.assign({}, pkg);
 delete pkgWithoutDependencies.dependencies;
+pkgWithoutDependencies.scripts = {
+  prepublishOnly:
+    "node -e \"assert.equal(require('.').version, require('..').version)\""
+};
 pipe(JSON.stringify(pkgWithoutDependencies, null, 2)).to("dist/package.json");
 
 shell.echo("Copy README.md");
@@ -131,7 +136,7 @@ shell.cp("README.md", "dist/README.md");
 shell.echo("Done!");
 shell.echo();
 shell.echo("How to test against dist:");
-shell.echo("  1) NODE_ENV=production yarn test");
+shell.echo("  1) yarn test:dist");
 shell.echo();
 shell.echo("How to publish:");
 shell.echo("  1) IMPORTANT!!! Go to dist/");

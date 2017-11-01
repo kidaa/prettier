@@ -221,14 +221,6 @@ FastPath.prototype.needsParens = function(options) {
       return false;
     }
 
-    case "MemberExpression": {
-      return (
-        parent.type === "MemberExpression" &&
-        parent.object === node &&
-        node.optional
-      );
-    }
-
     case "SpreadElement":
     case "SpreadProperty":
       return (
@@ -299,6 +291,9 @@ FastPath.prototype.needsParens = function(options) {
     case "TSAsExpression":
     case "LogicalExpression":
       switch (parent.type) {
+        case "ConditionalExpression":
+          return node.type === "TSAsExpression";
+
         case "CallExpression":
         case "NewExpression":
           return name === "callee" && parent.callee === node;
@@ -342,7 +337,7 @@ FastPath.prototype.needsParens = function(options) {
             return true;
           }
 
-          if (po === "||" && no === "&&") {
+          if ((po === "||" || po === "??") && no === "&&") {
             return true;
           }
 
@@ -622,6 +617,7 @@ function isStatement(node) {
     node.type === "ClassDeclaration" ||
     node.type === "ClassMethod" ||
     node.type === "ClassProperty" ||
+    node.type === "ClassPrivateProperty" ||
     node.type === "ContinueStatement" ||
     node.type === "DebuggerStatement" ||
     node.type === "DeclareClass" ||

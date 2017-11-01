@@ -1,6 +1,6 @@
 /* eslint-env browser */
 /* eslint no-var: off, strict: off, prefer-arrow-callback: off */
-/* global Clipboard CodeMirror formatMarkdown */
+/* global Clipboard CodeMirror formatMarkdown LZString */
 
 var prettierVersion = "?";
 var inputEditor;
@@ -26,66 +26,80 @@ var OPTIONS = [
 
 var IDEMPOTENT_MESSAGE = "✓ Second format is unchanged.";
 
-var state = (function loadState(hash) {
-  try {
-    return JSON.parse(hash);
-  } catch (error) {
-    return {
-      options: undefined,
-      content: [
-        'function HelloWorld({greeting = "hello", greeted = \'"World"\', silent = false, onMouseOver,}) {',
-        "",
-        "  if(!greeting){return null};",
-        "",
-        "     // TODO: Don't use random in render",
-        '  let num = Math.floor (Math.random() * 1E+7).toString().replace(/\\.\\d+/ig, "")',
-        "",
-        "  return <div className='HelloWorld' title={`You are visitor number ${ num }`} onMouseOver={onMouseOver}>",
-        "",
-        "    <strong>{ greeting.slice( 0, 1 ).toUpperCase() + greeting.slice(1).toLowerCase() }</strong>",
-        '    {greeting.endsWith(",") ? " " : <span style={{color: \'\\grey\'}}>", "</span> }',
-        "    <em>",
-        "\t{ greeted }",
-        "\t</em>",
-        "    { (silent)",
-        '      ? "."',
-        '      : "!"}',
-        "",
-        "    </div>;",
-        "",
-        "}"
-      ].join("\n")
-    };
-  }
-})(decodeURIComponent(location.hash.slice(1)));
-
 var worker = new Worker("/worker.js");
 
-worker.onmessage = function(message) {
-  if (prettierVersion === "?") {
-    prettierVersion = message.data.version;
-    document.getElementById("version").textContent = prettierVersion;
-  }
-  if (outputEditor && docEditor && astEditor) {
-    outputEditor.setValue(message.data.formatted);
-    docEditor.setValue(message.data.doc || "");
-    astEditor.setValue(message.data.ast || "");
-    output2Editor.setValue(
-      message.data.formatted === ""
-        ? ""
-        : message.data.formatted2 === message.data.formatted
-          ? IDEMPOTENT_MESSAGE
-          : message.data.formatted2 || ""
-    );
-    document.getElementById("button-report-issue").search =
-      "body=" + encodeURIComponent(createMarkdown(true));
-  }
+const DEFAULT_OPTIONS = {
+  options: undefined,
+  content: [
+    'function HelloWorld({greeting = "hello", greeted = \'"World"\', silent = false, onMouseOver,}) {',
+    "",
+    "  if(!greeting){return null};",
+    "",
+    "     // TODO: Don't use random in render",
+    '  let num = Math.floor (Math.random() * 1E+7).toString().replace(/\\.\\d+/ig, "")',
+    "",
+    "  return <div className='HelloWorld' title={`You are visitor number ${ num }`} onMouseOver={onMouseOver}>",
+    "",
+    "    <strong>{ greeting.slice( 0, 1 ).toUpperCase() + greeting.slice(1).toLowerCase() }</strong>",
+    '    {greeting.endsWith(",") ? " " : <span style={{color: \'\\grey\'}}>", "</span> }',
+    "    <em>",
+    "\t{ greeted }",
+    "\t</em>",
+    "    { (silent)",
+    '      ? "."',
+    '      : "!"}',
+    "",
+    "    </div>;",
+    "",
+    "}"
+  ].join("\n")
 };
 
-// Warm up the worker (load the current parser while CodeMirror loads)
-worker.postMessage({ text: "", options: state.options });
-
 window.onload = function() {
+  var state = (function loadState(hash) {
+    var parsed;
+    try {
+      // providing backwards support for old json encoded URIComponent
+      if (hash.indexOf("%7B%22") !== -1) {
+        parsed = JSON.parse(decodeURIComponent(hash));
+      } else {
+        parsed = JSON.parse(LZString.decompressFromEncodedURIComponent(hash));
+      }
+    } catch (error) {
+      return DEFAULT_OPTIONS;
+    }
+    // Support old links with the deprecated "postcss" value for the parser option.
+    if (parsed && parsed.options && parsed.options.parser === "postcss") {
+      parsed.options.parser = "css";
+    }
+
+    return parsed || DEFAULT_OPTIONS;
+  })(location.hash.slice(1));
+
+  worker.onmessage = function(message) {
+    if (prettierVersion === "?") {
+      prettierVersion = message.data.version;
+      document.getElementById("version").textContent = prettierVersion;
+    }
+    if (outputEditor && docEditor && astEditor) {
+      outputEditor.setValue(message.data.formatted);
+      docEditor.setValue(message.data.doc || "");
+      astEditor.setValue(message.data.ast || "");
+      output2Editor.setValue(
+        message.data.formatted === ""
+          ? ""
+          : message.data.formatted2 === message.data.formatted
+            ? IDEMPOTENT_MESSAGE
+            : message.data.formatted2 || ""
+      );
+      document.getElementById("button-report-issue").search =
+        "body=" + encodeURIComponent(createMarkdown(true));
+    }
+  };
+
+  // Warm up the worker (load the current parser while CodeMirror loads)
+  worker.postMessage({ text: "", options: state.options });
+
   state.options && setOptions(state.options);
 
   var editorOptions = {
@@ -135,6 +149,7 @@ window.onload = function() {
     editors[i].classList.remove("loading");
   }
 
+  setEditorStyles();
   inputEditor.setValue(state.content);
   document.querySelector(".options-container").onchange = formatAsync;
 
@@ -238,7 +253,9 @@ function replaceHash(hash) {
 
 function getCodemirrorMode(options) {
   switch (options.parser) {
-    case "postcss":
+    case "css":
+    case "less":
+    case "scss":
       return "css";
     default:
       return "jsx";
@@ -246,6 +263,25 @@ function getCodemirrorMode(options) {
 }
 
 function formatAsync() {
+  var options = getOptions();
+  setEditorStyles();
+
+  var value = LZString.compressToEncodedURIComponent(
+    JSON.stringify(
+      Object.assign({ content: inputEditor.getValue(), options: options })
+    )
+  );
+  replaceHash(value);
+  worker.postMessage({
+    text: inputEditor.getValue(),
+    options: options,
+    ast: options.ast,
+    doc: options.doc,
+    formatted2: options.output2
+  });
+}
+
+function setEditorStyles() {
   var options = getOptions();
 
   var mode = getCodemirrorMode(options);
@@ -263,20 +299,6 @@ function formatAsync() {
   document.querySelector(".output2").style.display = options.output2
     ? ""
     : "none";
-
-  var value = encodeURIComponent(
-    JSON.stringify(
-      Object.assign({ content: inputEditor.getValue(), options: options })
-    )
-  );
-  replaceHash(value);
-  worker.postMessage({
-    text: inputEditor.getValue(),
-    options: options,
-    ast: options.ast,
-    doc: options.doc,
-    formatted2: options.output2
-  });
 }
 
 function createMarkdown(full) {

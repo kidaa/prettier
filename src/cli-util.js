@@ -1,14 +1,15 @@
 "use strict";
 
 const path = require("path");
+const camelCase = require("camelcase");
 const dashify = require("dashify");
 const minimist = require("minimist");
-const getStream = require("get-stream");
 const fs = require("fs");
 const globby = require("globby");
 const ignore = require("ignore");
 const chalk = require("chalk");
 const readline = require("readline");
+const leven = require("leven");
 
 const prettier = eval("require")("../index");
 const cleanAST = require("./clean-ast").cleanAST;
@@ -16,8 +17,12 @@ const resolver = require("./resolve-config");
 const constant = require("./cli-constant");
 const validator = require("./cli-validator");
 const apiDefaultOptions = require("./options").defaults;
+const errors = require("./errors");
+const logger = require("./cli-logger");
 
 const OPTION_USAGE_THRESHOLD = 25;
+const CHOICE_USAGE_MARGIN = 3;
+const CHOICE_USAGE_INDENTATION = 2;
 
 function getOptions(argv) {
   return constant.detailedOptions
@@ -53,13 +58,15 @@ function handleError(filename, error) {
   // `util.inspect` of throws things that aren't `Error` objects. (The Flow
   // parser has mistakenly thrown arrays sometimes.)
   if (isParseError) {
-    console.error(`${filename}: ${String(error)}`);
-  } else if (isValidationError) {
-    console.error(String(error));
+    logger.error(`${filename}: ${String(error)}`);
+  } else if (isValidationError || error instanceof errors.ConfigError) {
+    logger.error(String(error));
     // If validation fails for one file, it will fail for all of them.
     process.exit(1);
+  } else if (error instanceof errors.DebugError) {
+    logger.error(`${filename}: ${error.message}`);
   } else {
-    console.error(filename + ":", error.stack || error);
+    logger.error(filename + ": " + (error.stack || error));
   }
 
   // Don't exit the process if one file failed
@@ -111,7 +118,9 @@ function format(argv, input, opt) {
     const pp = prettier.format(input, opt);
     const pppp = prettier.format(pp, opt);
     if (pp !== pppp) {
-      throw "prettier(input) !== prettier(prettier(input))\n" + diff(pp, pppp);
+      throw new errors.DebugError(
+        "prettier(input) !== prettier(prettier(input))\n" + diff(pp, pppp)
+      );
     } else {
       const ast = cleanAST(prettier.__debug.parse(input, opt));
       const past = cleanAST(prettier.__debug.parse(pp, opt));
@@ -122,10 +131,12 @@ function format(argv, input, opt) {
           ast.length > MAX_AST_SIZE || past.length > MAX_AST_SIZE
             ? "AST diff too large to render"
             : diff(ast, past);
-        throw "ast(input) !== ast(prettier(input))\n" +
-          astDiff +
-          "\n" +
-          diff(input, pp);
+        throw new errors.DebugError(
+          "ast(input) !== ast(prettier(input))\n" +
+            astDiff +
+            "\n" +
+            diff(input, pp)
+        );
       }
     }
     return { formatted: opt.filepath || "(stdin)\n" };
@@ -136,24 +147,50 @@ function format(argv, input, opt) {
 
 function getOptionsOrDie(argv, filePath) {
   try {
-    return argv["config"] === false
-      ? null
-      : resolver.resolveConfig.sync(filePath, { config: argv["config"] });
+    if (argv["config"] === false) {
+      logger.debug("'--no-config' option found, skip loading config file.");
+      return null;
+    }
+
+    logger.debug(
+      argv["config"]
+        ? `load config file from '${argv["config"]}'`
+        : `resolve config from '${filePath}'`
+    );
+    const options = resolver.resolveConfig.sync(filePath, {
+      config: argv["config"]
+    });
+
+    logger.debug("loaded options `" + JSON.stringify(options) + "`");
+    return options;
   } catch (error) {
-    console.error("Error: Invalid configuration file.");
-    console.error(error.message);
+    logger.error("Invalid configuration file: " + error.message);
     process.exit(2);
   }
 }
 
-function getOptionsForFile(argv, filePath) {
-  const options = getOptionsOrDie(argv, filePath);
-  return applyConfigPrecedence(argv, options);
+function getOptionsForFile(argv, filepath) {
+  const options = getOptionsOrDie(argv, filepath);
+
+  const appliedOptions = Object.assign(
+    { filepath },
+    applyConfigPrecedence(
+      argv,
+      options && normalizeConfig("api", options, constant.detailedOptionMap)
+    )
+  );
+
+  logger.debug(
+    `applied config-precedence (${argv["config-precedence"]}): ` +
+      `${JSON.stringify(appliedOptions)}`
+  );
+  return appliedOptions;
 }
 
 function parseArgsToOptions(argv, overrideDefaults) {
   return getOptions(
-    normalizeArgv(
+    normalizeConfig(
+      "cli",
       minimist(
         argv.__args,
         Object.assign({
@@ -182,14 +219,18 @@ function applyConfigPrecedence(argv, options) {
         return options || parseArgsToOptions(argv);
     }
   } catch (error) {
-    console.error(error.toString());
+    logger.error(error.toString());
     process.exit(2);
   }
 }
 
 function formatStdin(argv) {
-  getStream(process.stdin).then(input => {
-    const options = getOptionsForFile(argv, process.cwd());
+  prettier.__debug.getStream(process.stdin).then(input => {
+    const filepath = argv["stdin-filepath"]
+      ? path.resolve(process.cwd(), argv["stdin-filepath"])
+      : process.cwd();
+
+    const options = getOptionsForFile(argv, filepath);
 
     if (listDifferent(argv, input, options, "(stdin)")) {
       return;
@@ -214,7 +255,7 @@ function eachFilename(argv, patterns, callback) {
     ignoreText = fs.readFileSync(ignoreFilePath, "utf8");
   } catch (readError) {
     if (readError.code !== "ENOENT") {
-      console.error(`Unable to read ${ignoreFilePath}:`, readError);
+      logger.error(`Unable to read ${ignoreFilePath}: ` + readError.message);
       process.exit(2);
     }
   }
@@ -228,14 +269,10 @@ function eachFilename(argv, patterns, callback) {
   try {
     const filePaths = globby
       .sync(patterns, { dot: true })
-      .map(
-        filePath =>
-          path.isAbsolute(filePath)
-            ? path.relative(process.cwd(), filePath)
-            : filePath
-      );
+      .map(filePath => path.relative(process.cwd(), filePath));
+
     if (filePaths.length === 0) {
-      console.error(`No matching files. Patterns tried: ${patterns.join(" ")}`);
+      logger.error(`No matching files. Patterns tried: ${patterns.join(" ")}`);
       process.exitCode = 2;
       return;
     }
@@ -245,8 +282,8 @@ function eachFilename(argv, patterns, callback) {
         callback(filePath, getOptionsForFile(argv, filePath))
       );
   } catch (error) {
-    console.error(
-      `Unable to expand glob patterns: ${patterns.join(" ")}\n${error}`
+    logger.error(
+      `Unable to expand glob patterns: ${patterns.join(" ")}\n${error.message}`
     );
     // Don't exit the process if one pattern failed
     process.exitCode = 2;
@@ -255,7 +292,7 @@ function eachFilename(argv, patterns, callback) {
 
 function formatFiles(argv) {
   eachFilename(argv, argv.__filePatterns, (filename, options) => {
-    if (argv["write"]) {
+    if (argv["write"] && process.stdout.isTTY) {
       // Don't use `console.log` here since we need to replace this line.
       process.stdout.write(filename);
     }
@@ -267,7 +304,7 @@ function formatFiles(argv) {
       // Add newline to split errors from filename line.
       process.stdout.write("\n");
 
-      console.error(`Unable to read file: ${filename}\n${error}`);
+      logger.error(`Unable to read file: ${filename}\n${error.message}`);
       // Don't exit the process if one file failed
       process.exitCode = 2;
       return;
@@ -296,27 +333,29 @@ function formatFiles(argv) {
     }
 
     if (argv["write"]) {
-      // Remove previously printed filename to log it with duration.
-      readline.clearLine(process.stdout, 0);
-      readline.cursorTo(process.stdout, 0, null);
+      if (process.stdout.isTTY) {
+        // Remove previously printed filename to log it with duration.
+        readline.clearLine(process.stdout, 0);
+        readline.cursorTo(process.stdout, 0, null);
+      }
 
       // Don't write the file if it won't change in order not to invalidate
       // mtime based caches.
       if (output === input) {
         if (!argv["list-different"]) {
-          console.log(chalk.grey("%s %dms"), filename, Date.now() - start);
+          console.log(`${chalk.grey(filename)} ${Date.now() - start}ms`);
         }
       } else {
         if (argv["list-different"]) {
           console.log(filename);
         } else {
-          console.log("%s %dms", filename, Date.now() - start);
+          console.log(`${filename} ${Date.now() - start}ms`);
         }
 
         try {
           fs.writeFileSync(filename, output, "utf8");
         } catch (error) {
-          console.error(`Unable to write file: ${filename}\n${error}`);
+          logger.error(`Unable to write file: ${filename}\n${error.message}`);
           // Don't exit the process if one file failed
           process.exitCode = 2;
         }
@@ -333,8 +372,7 @@ function formatFiles(argv) {
   });
 }
 
-function createUsage() {
-  const options = constant.detailedOptions;
+function getOptionsWithOpposites(options) {
   // Add --no-foo after --foo.
   const optionsWithOpposites = options.map(option => [
     option.description ? option : null,
@@ -346,11 +384,21 @@ function createUsage() {
         })
       : null
   ]);
-  const flattenedOptions = [].concat
-    .apply([], optionsWithOpposites)
-    .filter(Boolean);
+  return flattenArray(optionsWithOpposites).filter(Boolean);
+}
 
-  const groupedOptions = groupBy(flattenedOptions, option => option.category);
+function createUsage() {
+  const options = getOptionsWithOpposites(constant.detailedOptions).filter(
+    // remove unnecessary option (e.g. `semi`, `color`, etc.), which is only used for --help <flag>
+    option =>
+      !(
+        option.type === "boolean" &&
+        option.oppositeDescription &&
+        !option.name.startsWith("no-")
+      )
+  );
+
+  const groupedOptions = groupBy(options, option => option.category);
 
   const firstCategories = constant.categoryOrder.slice(0, -1);
   const lastCategories = constant.categoryOrder.slice(-1);
@@ -372,20 +420,31 @@ function createUsage() {
 }
 
 function createOptionUsage(option, threshold) {
-  const name = `--${option.name}`;
-  const alias = option.alias ? `or -${option.alias}` : null;
-  const type = createOptionUsageType(option);
-  const header = [name, alias, type].filter(Boolean).join(" ");
+  const header = createOptionUsageHeader(option);
+  const optionDefaultValue = getOptionDefaultValue(option.name);
+  return createOptionUsageRow(
+    header,
+    `${option.description}${optionDefaultValue === undefined
+      ? ""
+      : `\nDefaults to ${optionDefaultValue}.`}`,
+    threshold
+  );
+}
 
+function createOptionUsageHeader(option) {
+  const name = `--${option.name}`;
+  const alias = option.alias ? `-${option.alias},` : null;
+  const type = createOptionUsageType(option);
+  return [alias, name, type].filter(Boolean).join(" ");
+}
+
+function createOptionUsageRow(header, content, threshold) {
   const separator =
     header.length >= threshold
       ? `\n${" ".repeat(threshold)}`
       : " ".repeat(threshold - header.length);
 
-  const description = option.description.replace(
-    /\n/g,
-    `\n${" ".repeat(threshold)}`
-  );
+  const description = content.replace(/\n/g, `\n${" ".repeat(threshold)}`);
 
   return `${header}${separator}${description}`;
 }
@@ -404,6 +463,105 @@ function createOptionUsageType(option) {
   }
 }
 
+function flattenArray(array) {
+  return [].concat.apply([], array);
+}
+
+function getOptionWithLevenSuggestion(options, optionName) {
+  // support aliases
+  const optionNameContainers = flattenArray(
+    options.map((option, index) => [
+      { value: option.name, index },
+      option.alias ? { value: option.alias, index } : null
+    ])
+  ).filter(Boolean);
+
+  const optionNameContainer = optionNameContainers.find(
+    optionNameContainer => optionNameContainer.value === optionName
+  );
+
+  if (optionNameContainer !== undefined) {
+    return options[optionNameContainer.index];
+  }
+
+  const suggestedOptionNameContainer = optionNameContainers.find(
+    optionNameContainer => leven(optionNameContainer.value, optionName) < 3
+  );
+
+  if (suggestedOptionNameContainer !== undefined) {
+    const suggestedOptionName = suggestedOptionNameContainer.value;
+    logger.warn(
+      `Unknown option name "${optionName}", did you mean "${suggestedOptionName}"?`
+    );
+
+    return options[suggestedOptionNameContainer.index];
+  }
+
+  logger.warn(`Unknown option name "${optionName}"`);
+  return options.find(option => option.name === "help");
+}
+
+function createChoiceUsages(choices, margin, indentation) {
+  const activeChoices = choices.filter(choice => !choice.deprecated);
+  const threshold =
+    activeChoices
+      .map(choice => choice.value.length)
+      .reduce((current, length) => Math.max(current, length), 0) + margin;
+  return activeChoices.map(choice =>
+    indent(
+      createOptionUsageRow(choice.value, choice.description, threshold),
+      indentation
+    )
+  );
+}
+
+function createDetailedUsage(optionName) {
+  const option = getOptionWithLevenSuggestion(
+    getOptionsWithOpposites(constant.detailedOptions),
+    optionName
+  );
+
+  const header = createOptionUsageHeader(option);
+  const description = `\n\n${indent(option.description, 2)}`;
+
+  const choices =
+    option.type !== "choice"
+      ? ""
+      : `\n\nValid options:\n\n${createChoiceUsages(
+          option.choices,
+          CHOICE_USAGE_MARGIN,
+          CHOICE_USAGE_INDENTATION
+        ).join("\n")}`;
+
+  const optionDefaultValue = getOptionDefaultValue(option.name);
+  const defaults =
+    optionDefaultValue !== undefined
+      ? `\n\nDefault: ${optionDefaultValue}`
+      : "";
+
+  return `${header}${description}${choices}${defaults}`;
+}
+
+function getOptionDefaultValue(optionName) {
+  // --no-option
+  if (!(optionName in constant.detailedOptionMap)) {
+    return undefined;
+  }
+
+  const option = constant.detailedOptionMap[optionName];
+
+  if (option.default !== undefined) {
+    return option.default;
+  }
+
+  const optionCamelName = camelCase(optionName);
+  if (optionCamelName in apiDefaultOptions) {
+    return apiDefaultOptions[optionCamelName];
+  }
+
+  return undefined;
+}
+
 function indent(str, spaces) {
   return str.replace(/^/gm, " ".repeat(spaces));
 }
@@ -416,30 +574,44 @@ function groupBy(array, getKey) {
   }, Object.create(null));
 }
 
-function normalizeArgv(rawArgv, options) {
+/** @param {'api' | 'cli'} type */
+function normalizeConfig(type, rawConfig, options) {
+  if (type === "api" && rawConfig === null) {
+    return null;
+  }
+
   options = options || {};
 
-  const consoleWarn = options.warning === false ? () => {} : console.warn;
+  const consoleWarn =
+    options.warning === false ? () => {} : logger.warn.bind(logger);
 
   const normalized = {};
 
-  Object.keys(rawArgv).forEach(key => {
-    const rawValue = rawArgv[key];
+  Object.keys(rawConfig).forEach(rawKey => {
+    const rawValue = rawConfig[rawKey];
 
-    if (key === "_") {
-      normalized[key] = rawValue;
+    const key = type === "cli" ? rawKey : dashify(rawKey);
+
+    if (type === "cli" && key === "_") {
+      normalized[rawKey] = rawValue;
       return;
     }
 
-    if (key.length === 1) {
+    if (type === "cli" && key.length === 1) {
       // do nothing with alias
       return;
     }
 
     const option = constant.detailedOptionMap[key];
 
+    // unknown option
     if (option === undefined) {
-      // unknown option
+      if (type === "api") {
+        consoleWarn(`Ignored unknown option: ${rawKey}`);
+      } else {
+        const optionName = rawValue === false ? `no-${rawKey}` : rawKey;
+        consoleWarn(`Ignored unknown option: --${optionName}`);
+      }
       return;
     }
 
@@ -448,44 +620,60 @@ function normalizeArgv(rawArgv, options) {
     if (option.exception !== undefined) {
       if (typeof option.exception === "function") {
         if (option.exception(value)) {
-          normalized[key] = value;
+          normalized[rawKey] = value;
           return;
         }
       } else {
         if (value === option.exception) {
-          normalized[key] = value;
+          normalized[rawKey] = value;
           return;
         }
       }
     }
 
-    switch (option.type) {
-      case "int":
-        validator.validateIntOption(value, option);
-        normalized[key] = Number(value);
-        break;
-      case "choice":
-        validator.validateChoiceOption(value, option);
-        normalized[key] = value;
-        break;
-      default:
-        normalized[key] = value;
-        break;
+    try {
+      switch (option.type) {
+        case "int":
+          validator.validateIntOption(type, value, option);
+          normalized[rawKey] = Number(value);
+          break;
+        case "choice":
+          validator.validateChoiceOption(type, value, option);
+          normalized[rawKey] = value;
+          break;
+        default:
+          normalized[rawKey] = value;
+          break;
+      }
+    } catch (error) {
+      logger.error(error.message);
+      process.exit(2);
     }
   });
 
   return normalized;
 
+  function getOptionName(option) {
+    return type === "cli" ? `--${option.name}` : camelCase(option.name);
+  }
+
+  function getRedirectName(option, choice) {
+    return type === "cli"
+      ? `--${option.name}=${choice.redirect}`
+      : `{ ${camelCase(option.name)}: ${JSON.stringify(choice.redirect)} }`;
+  }
+
   function getValue(rawValue, option) {
+    const optionName = getOptionName(option);
     if (rawValue && option.deprecated) {
-      let warning = `\`--${option.name}\` is deprecated.`;
+      let warning = `\`${optionName}\` is deprecated.`;
       if (typeof option.deprecated === "string") {
         warning += ` ${option.deprecated}`;
       }
       consoleWarn(warning);
     }
 
-    const value = option.getter(rawValue, rawArgv);
+    const value = option.getter(rawValue, rawConfig);
 
     if (option.type === "choice") {
       const choice = option.choices.find(choice => choice.value === rawValue);
@@ -494,8 +682,9 @@ function normalizeArgv(rawArgv, options) {
           rawValue === ""
             ? "without an argument"
             : `with value \`${rawValue}\``;
+        const redirectName = getRedirectName(option, choice);
         consoleWarn(
-          `\`--${option.name}\` ${warningDescription} is deprecated. Prettier now treats it as: \`--${option.name}=${choice.redirect}\`.`
+          `\`${optionName}\` ${warningDescription} is deprecated. Prettier now treats it as: \`${redirectName}\`.`
         );
         return choice.redirect;
       }
@@ -511,5 +700,6 @@ module.exports = {
   formatStdin,
   formatFiles,
   createUsage,
-  normalizeArgv
+  createDetailedUsage,
+  normalizeConfig
 };
